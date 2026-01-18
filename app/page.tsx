@@ -431,6 +431,40 @@ export default function Home() {
     }
   }
 
+  const handleDeleteRecipient = async (id: string) => {
+    if (careRecipients.length <= 1) {
+      alert('Cannot delete the last care recipient')
+      return
+    }
+    
+    const recipient = careRecipients.find(r => r.id === id)
+    if (!confirm(`Are you sure you want to delete ${recipient?.name}? This will also delete all associated documents, medical records, and appointments.`)) {
+      return
+    }
+    
+    try {
+      const { error } = await supabase
+        .from('care_recipients')
+        .delete()
+        .eq('id', id)
+      
+      if (!error) {
+        setCareRecipients(prev => prev.filter(r => r.id !== id))
+        
+        // If deleting the selected recipient, select the first remaining one
+        if (selectedRecipient?.id === id) {
+          const remaining = careRecipients.filter(r => r.id !== id)
+          setSelectedRecipient(remaining[0] || null)
+        }
+      } else {
+        alert('Error deleting care recipient: ' + error.message)
+      }
+    } catch (error) {
+      console.error('Error deleting care recipient:', error)
+      alert('Error deleting care recipient')
+    }
+  }
+
   // Check for upcoming appointments and send notifications
   useEffect(() => {
     const checkUpcomingAppointments = () => {
@@ -559,20 +593,33 @@ export default function Home() {
             </div>
             <div className="flex items-center gap-3">
               {careRecipients.length > 0 && (
-                <select
-                  className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
-                  value={selectedRecipient?.id || ''}
-                  onChange={(e) => {
-                    const recipient = careRecipients.find(r => r.id === e.target.value)
-                    setSelectedRecipient(recipient || null)
-                  }}
-                >
-                  {careRecipients.map(recipient => (
-                    <option key={recipient.id} value={recipient.id}>
-                      {recipient.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex items-center gap-2">
+                  <select
+                    className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm"
+                    value={selectedRecipient?.id || ''}
+                    onChange={(e) => {
+                      const recipient = careRecipients.find(r => r.id === e.target.value)
+                      setSelectedRecipient(recipient || null)
+                    }}
+                  >
+                    {careRecipients.map(recipient => (
+                      <option key={recipient.id} value={recipient.id}>
+                        {recipient.name}
+                      </option>
+                    ))}
+                  </select>
+                  {selectedRecipient && careRecipients.length > 1 && (
+                    <Button 
+                      variant="ghost" 
+                      size="icon"
+                      className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                      onClick={() => handleDeleteRecipient(selectedRecipient.id)}
+                      title="Delete current care recipient"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               )}
               <Button onClick={() => setShowRecipientForm(true)} variant="outline" size="sm" className="gap-2">
                 <Users className="w-4 h-4" />

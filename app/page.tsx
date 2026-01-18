@@ -392,43 +392,43 @@ export default function Home() {
   
   const handleDeleteAppointment = async (id: string) => {
     if (!confirm('Are you sure you want to delete this appointment?')) return;
+    
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .delete()
+        .eq('id', id);
       
-      try {
-        const { error } = await supabase
-          .from('appointments')
-          .delete()
-          .eq('id', id);
-        
-        if (!error) {
-          setAppointments(prev => prev.filter(appt => appt.id !== id));
-        } else {
-          alert('Error deleting appointment: ' + error.message);
-        }
-      } catch (error) {
-        console.error('Error deleting appointment:', error);
-        alert('Error deleting appointment');
+      if (!error) {
+        setAppointments(prev => prev.filter(appt => appt.id !== id));
+      } else {
+        alert('Error deleting appointment: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error deleting appointment:', error);
+      alert('Error deleting appointment');
     }
   };
   
   const toggleAppointmentCompleted = async (id: string, currentStatus: boolean) => {
-      try {
-        const { error } = await supabase
-          .from('appointments')
-          .update({ is_completed: !currentStatus })
-          .eq('id', id);
-        
-        if (!error) {
-          setAppointments(prev => 
-            prev.map(appt => 
-              appt.id === id ? { ...appt, is_completed: !currentStatus } : appt
-            )
-          );
-        } else {
-          alert('Error updating appointment: ' + error.message);
-        }
-      } catch (error) {
-        console.error('Error updating appointment:', error);
-        alert('Error updating appointment');
+    try {
+      const { error } = await supabase
+        .from('appointments')
+        .update({ is_completed: !currentStatus })
+        .eq('id', id);
+      
+      if (!error) {
+        setAppointments(prev => 
+          prev.map(appt => 
+            appt.id === id ? { ...appt, is_completed: !currentStatus } : appt
+          )
+        );
+      } else {
+        alert('Error updating appointment: ' + error.message);
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      alert('Error updating appointment');
     }
   };
 

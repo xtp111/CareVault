@@ -3,35 +3,59 @@ import { test, expect } from '@playwright/test'
 test.describe('CareVault - Use Case Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
-    // Wait for care recipients to load
-    await page.waitForTimeout(1000)
+    // Wait for page load
+    await page.waitForLoadState('networkidle')
   })
 
-  test.describe('Use Case 0: Care Recipient Selection', () => {
+  test.describe('UC0: Care Recipient Management', () => {
     test('UC0.1 - User views care recipient selector', async ({ page }) => {
-      // Verify care recipient selector is visible
-      await expect(page.getByText('Select Care Recipient')).toBeVisible()
+      // Verify "Add Person" button is visible
+      await expect(page.getByRole('button', { name: /Add Person/i })).toBeVisible()
     })
 
     test('UC0.2 - User adds new care recipient', async ({ page }) => {
-      // Click add care recipient button
-      const addRecipientButton = page.locator('button').filter({ has: page.locator('svg.lucide-user-plus') })
-      await addRecipientButton.first().click()
+      // Click Add Person button
+      await page.getByRole('button', { name: /Add Person/i }).click()
       
       // Wait for modal
-      await page.waitForTimeout(500)
+      await expect(page.getByText('Add Care Recipient')).toBeVisible()
       
       // Fill in care recipient details
       await page.getByLabel('Name *').fill('John Doe')
-      await page.getByLabel('Relationship').fill('Father')
+      await page.locator('#recipient-relation').selectOption('Parent')
       await page.getByLabel('Date of Birth').fill('1950-01-01')
+      await page.getByLabel('Emergency Contact Name').fill('Jane Doe')
+      await page.getByLabel('Emergency Contact Phone').fill('+1 (555) 123-4567')
       await page.getByLabel('Notes').fill('Primary care recipient')
       
       // Submit form
-      await page.getByRole('button', { name: /Add Care Recipient/i }).click()
+      await page.getByRole('button', { name: /Add Person/i }).last().click()
       
       // Verify new recipient appears in selector
-      await expect(page.getByText('John Doe')).toBeVisible()
+      await expect(page.getByText('Caring for John Doe')).toBeVisible()
+    })
+
+    test('UC0.3 - User deletes care recipient', async ({ page }) => {
+      // First, add two recipients to ensure we can delete one
+      await page.getByRole('button', { name: /Add Person/i }).click()
+      await page.getByLabel('Name *').fill('Test Person 1')
+      await page.getByRole('button', { name: /Add Person/i }).last().click()
+      
+      await page.waitForTimeout(500)
+      
+      await page.getByRole('button', { name: /Add Person/i }).click()
+      await page.getByLabel('Name *').fill('Test Person 2')
+      await page.getByRole('button', { name: /Add Person/i }).last().click()
+      
+      // Click delete button (trash icon)
+      const deleteButton = page.locator('button').filter({ has: page.locator('svg.lucide-trash-2') })
+      await deleteButton.click()
+      
+      // Confirm deletion
+      page.on('dialog', dialog => dialog.accept())
+      
+      // Verify recipient was deleted
+      await expect(page.getByText('Test Person 2')).not.toBeVisible()
     })
   })
 

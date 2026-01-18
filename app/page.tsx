@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink } from 'lucide-react'
+import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatFileSize } from '@/lib/utils'
 
@@ -104,6 +104,8 @@ export default function Home() {
     emergency_contact_phone: '',
     notes: ''
   })
+  
+  const [editingRecipientId, setEditingRecipientId] = useState<string | null>(null);
   
   // Filter upcoming appointments
   const upcomingAppointments = appointments.filter(appt => {
@@ -276,36 +278,65 @@ export default function Home() {
       alert('Please select a care recipient first')
       return
     }
-    
+      
     if (!medicalForm.name.trim()) {
       alert('Please enter a record name')
       return
     }
-    
-    try {
-      const { data, error } = await supabase
-        .from('medical_records')
-        .insert([{
-          ...medicalForm,
-          care_recipient_id: selectedRecipient.id
-        }])
-        .select()
       
-      if (data && !error) {
-        setMedicalRecords(prev => [data[0], ...prev])
-        setMedicalForm({
-          type: 'medications',
-          name: '',
-          details: '',
-          date: new Date().toISOString().split('T')[0]
-        })
-        setShowMedicalForm(false)
+    try {
+      const editingId = document.body.getAttribute('data-editing-medical-id');
+      if (editingId) {
+        // Editing existing record
+        const { data, error } = await supabase
+          .from('medical_records')
+          .update({
+            ...medicalForm,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingId)
+          .select();
+          
+        if (data && !error) {
+          setMedicalRecords(prev => 
+            prev.map(record => 
+              record.id === editingId ? data[0] : record
+            )
+          );
+          // Clear the editing flag
+          document.body.removeAttribute('data-editing-medical-id');
+        } else {
+          alert('Error updating medical record: ' + error?.message);
+          return;
+        }
       } else {
-        alert('Error adding medical record: ' + error?.message)
+        // Adding new record
+        const { data, error } = await supabase
+          .from('medical_records')
+          .insert([{ 
+            ...medicalForm,
+            care_recipient_id: selectedRecipient.id
+          }])
+          .select();
+          
+        if (data && !error) {
+          setMedicalRecords(prev => [data[0], ...prev]);
+        } else {
+          alert('Error adding medical record: ' + error?.message);
+          return;
+        }
       }
+        
+      setMedicalForm({
+        type: 'medications',
+        name: '',
+        details: '',
+        date: new Date().toISOString().split('T')[0]
+      });
+      setShowMedicalForm(false);
     } catch (error) {
-      console.error('Error adding medical record:', error)
-      alert('Error adding medical record')
+      console.error('Error processing medical record:', error);
+      alert('Error processing medical record');
     }
   }
   
@@ -321,30 +352,59 @@ export default function Home() {
       }
       
       try {
-        const { data, error } = await supabase
-          .from('appointments')
-          .insert([{
-            ...appointmentForm,
-            care_recipient_id: selectedRecipient.id
-          }])
-          .select();
-        
-        if (data && !error) {
-          setAppointments(prev => [...prev, data[0]]);
-          setAppointmentForm({
-            title: '',
-            description: '',
-            appointment_date: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
-            remind_before_minutes: 30,
-            repeat_interval: 'none'
-          });
-          setShowAppointmentModal(false);
+        const editingId = document.body.getAttribute('data-editing-appointment-id');
+        if (editingId) {
+          // Editing existing appointment
+          const { data, error } = await supabase
+            .from('appointments')
+            .update({
+              ...appointmentForm,
+              updated_at: new Date().toISOString()
+            })
+            .eq('id', editingId)
+            .select();
+          
+          if (data && !error) {
+            setAppointments(prev => 
+              prev.map(appt => 
+                appt.id === editingId ? data[0] : appt
+              )
+            );
+            // Clear the editing flag
+            document.body.removeAttribute('data-editing-appointment-id');
+          } else {
+            alert('Error updating appointment: ' + error?.message);
+            return;
+          }
         } else {
-          alert('Error adding appointment: ' + error?.message);
+          // Adding new appointment
+          const { data, error } = await supabase
+            .from('appointments')
+            .insert([{
+              ...appointmentForm,
+              care_recipient_id: selectedRecipient.id
+            }])
+            .select();
+          
+          if (data && !error) {
+            setAppointments(prev => [...prev, data[0]]);
+          } else {
+            alert('Error adding appointment: ' + error?.message);
+            return;
+          }
         }
+        
+        setAppointmentForm({
+          title: '',
+          description: '',
+          appointment_date: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
+          remind_before_minutes: 30,
+          repeat_interval: 'none'
+        });
+        setShowAppointmentModal(false);
       } catch (error) {
-        console.error('Error adding appointment:', error);
-        alert('Error adding appointment');
+        console.error('Error processing appointment:', error);
+        alert('Error processing appointment');
       }
     };
     
@@ -397,22 +457,111 @@ export default function Home() {
     }
     
     try {
+      if (editingRecipientId) {
+        // Editing existing recipient
+        const { data, error } = await supabase
+          .from('care_recipients')
+          .update({
+            name: recipientForm.name,
+            date_of_birth: recipientForm.date_of_birth,
+            relationship: recipientForm.relationship,
+            emergency_contact_name: recipientForm.emergency_contact_name,
+            emergency_contact_phone: recipientForm.emergency_contact_phone,
+            notes: recipientForm.notes,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', editingRecipientId)
+          .select()
+        
+        if (data && !error) {
+          setCareRecipients(prev => 
+            prev.map(recipient => 
+              recipient.id === editingRecipientId ? data[0] : recipient
+            )
+          );
+          
+          // Update selected recipient if it's the one being edited
+          if (selectedRecipient?.id === editingRecipientId) {
+            setSelectedRecipient(data[0]);
+          }
+          
+          setEditingRecipientId(null);
+        } else {
+          alert('Error updating care recipient: ' + error?.message)
+          return;
+        }
+      } else {
+        // Adding new recipient
+        const { data, error } = await supabase
+          .from('care_recipients')
+          .insert([{
+            name: recipientForm.name,
+            date_of_birth: recipientForm.date_of_birth,
+            relationship: recipientForm.relationship,
+            emergency_contact_name: recipientForm.emergency_contact_name,
+            emergency_contact_phone: recipientForm.emergency_contact_phone,
+            notes: recipientForm.notes,
+            is_active: true
+          }])
+          .select()
+        
+        if (data && !error) {
+          setCareRecipients(prev => [...prev, data[0]])
+          setSelectedRecipient(data[0])
+        } else {
+          alert('Error adding care recipient: ' + error?.message)
+          return;
+        }
+      }
+      
+      setRecipientForm({
+        name: '',
+        date_of_birth: '',
+        relationship: 'Parent',
+        emergency_contact_name: '',
+        emergency_contact_phone: '',
+        notes: ''
+      })
+      setShowRecipientForm(false)
+    } catch (error) {
+      console.error('Error processing care recipient:', error)
+      alert('Error processing care recipient')
+    }
+  };
+  
+  const handleEditRecipient = async (id: string) => {
+    if (!recipientForm.name.trim()) {
+      alert('Please enter a name');
+      return;
+    }
+    
+    try {
       const { data, error } = await supabase
         .from('care_recipients')
-        .insert([{
+        .update({
           name: recipientForm.name,
           date_of_birth: recipientForm.date_of_birth,
           relationship: recipientForm.relationship,
           emergency_contact_name: recipientForm.emergency_contact_name,
           emergency_contact_phone: recipientForm.emergency_contact_phone,
           notes: recipientForm.notes,
-          is_active: true
-        }])
-        .select()
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
       
       if (data && !error) {
-        setCareRecipients(prev => [...prev, data[0]])
-        setSelectedRecipient(data[0])
+        setCareRecipients(prev => 
+          prev.map(recipient => 
+            recipient.id === id ? data[0] : recipient
+          )
+        );
+        
+        // Update selected recipient if it's the one being edited
+        if (selectedRecipient?.id === id) {
+          setSelectedRecipient(data[0]);
+        }
+        
         setRecipientForm({
           name: '',
           date_of_birth: '',
@@ -420,17 +569,17 @@ export default function Home() {
           emergency_contact_name: '',
           emergency_contact_phone: '',
           notes: ''
-        })
-        setShowRecipientForm(false)
+        });
+        setShowRecipientForm(false);
       } else {
-        alert('Error adding care recipient: ' + error?.message)
+        alert('Error updating care recipient: ' + error?.message);
       }
     } catch (error) {
-      console.error('Error adding care recipient:', error)
-      alert('Error adding care recipient')
+      console.error('Error updating care recipient:', error);
+      alert('Error updating care recipient');
     }
-  }
-
+  };
+  
   const handleDeleteRecipient = async (id: string) => {
     if (careRecipients.length <= 1) {
       alert('Cannot delete the last care recipient')
@@ -524,6 +673,74 @@ export default function Home() {
     };
   }, [appointments]);
 
+  const handleEditDocument = async (id: string) => {
+    if (!documentForm.name.trim()) {
+      alert('Please enter a document name');
+      return;
+    }
+    
+    try {
+      let fileUrl = null;
+      let fileName = null;
+      let fileSize = null;
+      
+      if (selectedFile) {
+        // If a new file is selected, upload it
+        const fileExt = selectedFile.name.split('.').pop();
+        const filePath = `${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+        
+        const { data: uploadData, error: uploadError } = await supabase.storage
+          .from('documents')
+          .upload(filePath, selectedFile);
+        
+        if (uploadError) {
+          alert('Error uploading file: ' + uploadError.message);
+          return;
+        }
+        
+        const { data: publicUrlData } = supabase.storage
+          .from('documents')
+          .getPublicUrl(filePath);
+        
+        fileUrl = publicUrlData.publicUrl;
+        fileName = selectedFile.name;
+        fileSize = selectedFile.size;
+      }
+      
+      const { data, error } = await supabase
+        .from('documents')
+        .update({
+          ...documentForm,
+          file_url: fileUrl || undefined, // Keep existing file if no new file uploaded
+          file_name: fileName || undefined,
+          file_size: fileSize || undefined,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
+      
+      if (data && !error) {
+        setDocuments(prev => 
+          prev.map(doc => 
+            doc.id === id ? data[0] : doc
+          )
+        );
+        setDocumentForm({
+          name: '',
+          category: 'medical',
+          date: new Date().toISOString().split('T')[0]
+        });
+        setSelectedFile(null);
+        setShowDocumentForm(false);
+      } else {
+        alert('Error updating document: ' + error?.message);
+      }
+    } catch (error) {
+      console.error('Error updating document:', error);
+      alert('Error updating document');
+    }
+  };
+  
   const handleDeleteDocument = async (id: string, fileUrl?: string) => {
     if (!confirm('Are you sure you want to delete this document?')) return
     
@@ -572,7 +789,84 @@ export default function Home() {
       alert('Error deleting record')
     }
   }
-
+  
+  const handleEditMedicalRecord = async (id: string) => {
+    if (!medicalForm.name.trim()) {
+      alert('Please enter a record name');
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('medical_records')
+        .update({
+          ...medicalForm,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
+      
+      if (data && !error) {
+        setMedicalRecords(prev => 
+          prev.map(record => 
+            record.id === id ? data[0] : record
+          )
+        );
+        setMedicalForm({
+          type: 'medications' as MedicalRecordType,
+          name: '',
+          details: '',
+          date: new Date().toISOString().split('T')[0]
+        });
+        setShowMedicalForm(false);
+      } else {
+        alert('Error updating medical record: ' + error?.message);
+      }
+    } catch (error) {
+      console.error('Error updating medical record:', error);
+      alert('Error updating medical record');
+    }
+  };
+  
+  const handleEditAppointment = async (id: string) => {
+    if (!appointmentForm.title.trim()) {
+      alert('Please enter an appointment title');
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .update({
+          ...appointmentForm,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', id)
+        .select();
+      
+      if (data && !error) {
+        setAppointments(prev => 
+          prev.map(appt => 
+            appt.id === id ? data[0] : appt
+          )
+        );
+        setAppointmentForm({
+          title: '',
+          description: '',
+          appointment_date: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
+          remind_before_minutes: 30,
+          repeat_interval: 'none' as RepeatInterval
+        });
+        setShowAppointmentModal(false);
+      } else {
+        alert('Error updating appointment: ' + error?.message);
+      }
+    } catch (error) {
+      console.error('Error updating appointment:', error);
+      alert('Error updating appointment');
+    }
+  };
+  
   return (
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
@@ -608,16 +902,40 @@ export default function Home() {
                       </option>
                     ))}
                   </select>
-                  {selectedRecipient && careRecipients.length > 1 && (
-                    <Button 
-                      variant="ghost" 
-                      size="icon"
-                      className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
-                      onClick={() => handleDeleteRecipient(selectedRecipient.id)}
-                      title="Delete current care recipient"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                  {selectedRecipient && (
+                    <>
+                      <Button 
+                        variant="outline" 
+                        size="icon"
+                        className="h-10 w-10"
+                        onClick={() => {
+                          setRecipientForm({
+                            name: selectedRecipient.name,
+                            date_of_birth: selectedRecipient.date_of_birth || '',
+                            relationship: selectedRecipient.relationship || 'Parent',
+                            emergency_contact_name: selectedRecipient.emergency_contact_name || '',
+                            emergency_contact_phone: selectedRecipient.emergency_contact_phone || '',
+                            notes: selectedRecipient.notes || ''
+                          });
+                          setEditingRecipientId(selectedRecipient.id);
+                          setShowRecipientForm(true);
+                        }}
+                        title="Edit current care recipient"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </Button>
+                      {careRecipients.length > 1 && (
+                        <Button 
+                          variant="ghost" 
+                          size="icon"
+                          className="h-10 w-10 text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteRecipient(selectedRecipient.id)}
+                          title="Delete current care recipient"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      )}
+                    </>
                   )}
                 </div>
               )}
@@ -848,8 +1166,11 @@ export default function Home() {
             <Card className="w-full max-w-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Add Medical Record</CardTitle>
-                  <Button variant="ghost" size="icon" onClick={() => setShowMedicalForm(false)}>
+                  <CardTitle>{document.body.getAttribute('data-editing-medical-id') ? 'Edit Medical Record' : 'Add Medical Record'}</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => {
+                    setShowMedicalForm(false);
+                    document.body.removeAttribute('data-editing-medical-id');
+                  }}>
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
@@ -897,8 +1218,13 @@ export default function Home() {
                   />
                 </div>
                 <div className="flex gap-3">
-                  <Button onClick={handleAddMedicalRecord} className="flex-1">Add Record</Button>
-                  <Button onClick={() => setShowMedicalForm(false)} variant="outline" className="flex-1">Cancel</Button>
+                  <Button onClick={handleAddMedicalRecord} className="flex-1">
+                    {document.body.getAttribute('data-editing-medical-id') ? 'Update Record' : 'Add Record'}
+                  </Button>
+                  <Button onClick={() => {
+                    setShowMedicalForm(false);
+                    document.body.removeAttribute('data-editing-medical-id');
+                  }} variant="outline" className="flex-1">Cancel</Button>
                 </div>
               </CardContent>
             </Card>
@@ -1105,14 +1431,37 @@ export default function Home() {
                                   <span className="text-sm font-medium">{record.name}</span>
                                   <p className="text-xs text-muted-foreground mt-1">{record.details}</p>
                                 </div>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleDeleteMedicalRecord(record.id)}
-                                >
-                                  <Trash2 className="w-4 h-4 text-destructive" />
-                                </Button>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => {
+                                      setMedicalForm({
+                                        type: record.type,
+                                        name: record.name,
+                                        details: record.details,
+                                        date: record.date
+                                      });
+                                      setShowMedicalForm(true);
+                                      // Set a flag to indicate we're editing
+                                      const tempId = 'edit_' + record.id;
+                                      document.body.setAttribute('data-editing-medical-id', record.id);
+                                    }}
+                                    title="Edit record"
+                                  >
+                                    <Edit className="w-4 h-4" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-8 w-8 opacity-0 group-hover:opacity-100 transition-opacity"
+                                    onClick={() => handleDeleteMedicalRecord(record.id)}
+                                    title="Delete record"
+                                  >
+                                    <Trash2 className="w-4 h-4 text-destructive" />
+                                  </Button>
+                                </div>
                               </div>
                             </div>
                           ))}
@@ -1161,12 +1510,13 @@ export default function Home() {
             <Card className="w-full max-w-md">
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle>Add Appointment</CardTitle>
+                  <CardTitle>{document.body.getAttribute('data-editing-appointment-id') ? 'Edit Appointment' : 'Add Appointment'}</CardTitle>
                   <Button 
                     variant="ghost" 
                     size="icon" 
                     onClick={() => {
                       setShowAppointmentModal(false);
+                      document.body.removeAttribute('data-editing-appointment-id');
                       setAppointmentForm({
                         title: '',
                         description: '',
@@ -1240,11 +1590,12 @@ export default function Home() {
                     onClick={handleAddAppointment} 
                     className="flex-1"
                   >
-                    Add Appointment
+                    {document.body.getAttribute('data-editing-appointment-id') ? 'Update Appointment' : 'Add Appointment'}
                   </Button>
                   <Button 
                     onClick={() => {
                       setShowAppointmentModal(false);
+                      document.body.removeAttribute('data-editing-appointment-id');
                       setAppointmentForm({
                         title: '',
                         description: '',
@@ -1329,6 +1680,25 @@ export default function Home() {
                                   {appointment.is_completed ? <Download className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
                                 </Button>
                                 <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  onClick={() => {
+                                    setAppointmentForm({
+                                      title: appointment.title,
+                                      description: appointment.description,
+                                      appointment_date: appointment.appointment_date,
+                                      remind_before_minutes: appointment.remind_before_minutes,
+                                      repeat_interval: appointment.repeat_interval
+                                    });
+                                    // Set a flag to indicate we're editing
+                                    document.body.setAttribute('data-editing-appointment-id', appointment.id);
+                                    setShowAppointmentModal(true);
+                                  }}
+                                  title="Edit appointment"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
+                                <Button 
                                   variant="destructive" 
                                   size="icon" 
                                   onClick={() => handleDeleteAppointment(appointment.id)}
@@ -1397,6 +1767,25 @@ export default function Home() {
                                     <Download className="w-4 h-4" />
                                   </Button>
                                 )}
+                                <Button 
+                                  variant="outline" 
+                                  size="icon" 
+                                  onClick={() => {
+                                    setAppointmentForm({
+                                      title: appointment.title,
+                                      description: appointment.description,
+                                      appointment_date: appointment.appointment_date,
+                                      remind_before_minutes: appointment.remind_before_minutes,
+                                      repeat_interval: appointment.repeat_interval
+                                    });
+                                    // Set a flag to indicate we're editing
+                                    document.body.setAttribute('data-editing-appointment-id', appointment.id);
+                                    setShowAppointmentModal(true);
+                                  }}
+                                  title="Edit appointment"
+                                >
+                                  <Edit className="w-4 h-4" />
+                                </Button>
                                 <Button 
                                   variant="destructive" 
                                   size="icon" 

@@ -12,6 +12,8 @@ CREATE TABLE IF NOT EXISTS care_recipients (
   name text NOT NULL,
   date_of_birth date,
   relationship text,
+  emergency_contact_name text,
+  emergency_contact_phone text,
   photo_url text,
   notes text,
   is_active boolean DEFAULT true,

@@ -6,7 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink } from 'lucide-react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, UserPlus } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 import { formatFileSize } from '@/lib/utils'
 
@@ -14,8 +15,20 @@ type DocumentCategory = 'legal' | 'medical' | 'financial' | 'identification'
 type MedicalRecordType = 'doctors' | 'medications' | 'conditions'
 type RepeatInterval = 'none' | 'daily' | 'weekly' | 'monthly' | 'yearly';
 
+interface CareRecipient {
+  id: string
+  name: string
+  date_of_birth?: string
+  relationship?: string
+  photo_url?: string
+  notes?: string
+  is_active: boolean
+  created_at?: string
+}
+
 interface Document {
   id: string
+  care_recipient_id: string
   name: string
   category: DocumentCategory
   file_url?: string
@@ -26,6 +39,7 @@ interface Document {
 
 interface MedicalRecord {
   id: string
+  care_recipient_id: string
   type: MedicalRecordType
   name: string
   details: string
@@ -34,6 +48,7 @@ interface MedicalRecord {
 
 interface Appointment {
   id: string;
+  care_recipient_id: string;
   title: string;
   description: string;
   appointment_date: string; // ISO date string
@@ -44,6 +59,16 @@ interface Appointment {
 }
 
 export default function Home() {
+  const [careRecipients, setCareRecipients] = useState<CareRecipient[]>([])
+  const [selectedRecipient, setSelectedRecipient] = useState<string>('')
+  const [showRecipientForm, setShowRecipientForm] = useState(false)
+  const [recipientForm, setRecipientForm] = useState({
+    name: '',
+    date_of_birth: '',
+    relationship: '',
+    notes: ''
+  })
+  
   const [documents, setDocuments] = useState<Document[]>([])
   const [medicalRecords, setMedicalRecords] = useState<MedicalRecord[]>([])
   const [showEmergencySummary, setShowEmergencySummary] = useState(false)
@@ -92,14 +117,43 @@ export default function Home() {
   }).sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime());
   
   useEffect(() => {
-    fetchData()
+    fetchCareRecipients()
   }, [])
   
+  useEffect(() => {
+    if (selectedRecipient) {
+      fetchData()
+    }
+  }, [selectedRecipient])
+  
+  const fetchCareRecipients = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('care_recipients')
+        .select('*')
+        .eq('is_active', true)
+        .order('created_at', { ascending: true })
+      
+      if (data && !error) {
+        setCareRecipients(data)
+        // Auto-select first recipient if available
+        if (data.length > 0 && !selectedRecipient) {
+          setSelectedRecipient(data[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching care recipients:', error)
+    }
+  }
+  
   const fetchData = async () => {
+    if (!selectedRecipient) return
+    
     try {
       const { data: documentsData, error: documentsError } = await supabase
         .from('documents')
         .select('*')
+        .eq('care_recipient_id', selectedRecipient)
         .order('date', { ascending: false })
       
       if (documentsData && !documentsError) {
@@ -109,6 +163,7 @@ export default function Home() {
       const { data: medicalData, error: medicalError } = await supabase
         .from('medical_records')
         .select('*')
+        .eq('care_recipient_id', selectedRecipient)
         .order('date', { ascending: false })
       
       if (medicalData && !medicalError) {
@@ -118,6 +173,7 @@ export default function Home() {
       const { data: appointmentsData, error: appointmentsError } = await supabase
         .from('appointments')
         .select('*')
+        .eq('care_recipient_id', selectedRecipient)
         .order('appointment_date', { ascending: true })
       
       if (appointmentsData && !appointmentsError) {
@@ -141,6 +197,40 @@ export default function Home() {
     conditions: AlertCircle,
   }
 
+  const handleAddRecipient = async () => {
+    if (!recipientForm.name.trim()) {
+      alert('Please enter a name')
+      return
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('care_recipients')
+        .insert([{
+          ...recipientForm,
+          is_active: true
+        }])
+        .select()
+      
+      if (data && !error) {
+        setCareRecipients(prev => [...prev, data[0]])
+        setSelectedRecipient(data[0].id)
+        setRecipientForm({
+          name: '',
+          date_of_birth: '',
+          relationship: '',
+          notes: ''
+        })
+        setShowRecipientForm(false)
+      } else {
+        alert('Error adding care recipient: ' + error?.message)
+      }
+    } catch (error) {
+      console.error('Error adding care recipient:', error)
+      alert('Error adding care recipient')
+    }
+  }
+
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0]
@@ -154,6 +244,11 @@ export default function Home() {
   const handleAddDocument = async () => {
     if (!documentForm.name.trim()) {
       alert('Please enter a document name')
+      return
+    }
+    
+    if (!selectedRecipient) {
+      alert('Please select a care recipient first')
       return
     }
     
@@ -191,6 +286,7 @@ export default function Home() {
         .from('documents')
         .insert([{
           ...documentForm,
+          care_recipient_id: selectedRecipient,
           file_url: fileUrl,
           file_name: fileName,
           file_size: fileSize
@@ -223,10 +319,18 @@ export default function Home() {
       return
     }
     
+    if (!selectedRecipient) {
+      alert('Please select a care recipient first')
+      return
+    }
+    
     try {
       const { data, error } = await supabase
         .from('medical_records')
-        .insert([medicalForm])
+        .insert([{
+          ...medicalForm,
+          care_recipient_id: selectedRecipient
+        }])
         .select()
       
       if (data && !error) {
@@ -247,16 +351,24 @@ export default function Home() {
     }
   }
   
-    const handleAddAppointment = async () => {
+  const handleAddAppointment = async () => {
       if (!appointmentForm.title.trim()) {
         alert('Please enter an appointment title');
+        return;
+      }
+      
+      if (!selectedRecipient) {
+        alert('Please select a care recipient first');
         return;
       }
       
       try {
         const { data, error } = await supabase
           .from('appointments')
-          .insert([appointmentForm])
+          .insert([{
+            ...appointmentForm,
+            care_recipient_id: selectedRecipient
+          }])
           .select();
         
         if (data && !error) {
@@ -276,9 +388,9 @@ export default function Home() {
         console.error('Error adding appointment:', error);
         alert('Error adding appointment');
       }
-    };
-    
-    const handleDeleteAppointment = async (id: string) => {
+  };
+  
+  const handleDeleteAppointment = async (id: string) => {
       if (!confirm('Are you sure you want to delete this appointment?')) return;
       
       try {
@@ -295,10 +407,10 @@ export default function Home() {
       } catch (error) {
         console.error('Error deleting appointment:', error);
         alert('Error deleting appointment');
-      }
-    };
-    
-    const toggleAppointmentCompleted = async (id: string, currentStatus: boolean) => {
+    }
+  };
+  
+  const toggleAppointmentCompleted = async (id: string, currentStatus: boolean) => {
       try {
         const { error } = await supabase
           .from('appointments')
@@ -317,8 +429,8 @@ export default function Home() {
       } catch (error) {
         console.error('Error updating appointment:', error);
         alert('Error updating appointment');
-      }
-    };
+    }
+  };
 
   // Check for upcoming appointments and send notifications
   useEffect(() => {
@@ -432,7 +544,7 @@ export default function Home() {
     <div className="min-h-screen bg-background">
       <header className="border-b bg-card/50 backdrop-blur-sm sticky top-0 z-10">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center">
                 <Heart className="w-6 h-6 text-primary-foreground" />
@@ -442,10 +554,33 @@ export default function Home() {
                 <p className="text-sm text-muted-foreground">Care Assistant</p>
               </div>
             </div>
-            <Button onClick={() => setShowEmergencySummary(true)} variant="secondary" className="gap-2">
-              <AlertCircle className="w-4 h-4" />
-              Emergency Summary
-            </Button>
+            <div className="flex items-center gap-3">
+              {careRecipients.length > 0 && (
+                <div className="flex items-center gap-2">
+                  <Label htmlFor="recipient-select" className="text-sm whitespace-nowrap">Caring for:</Label>
+                  <Select value={selectedRecipient} onValueChange={setSelectedRecipient}>
+                    <SelectTrigger className="w-[200px]" id="recipient-select">
+                      <SelectValue placeholder="Select person" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {careRecipients.map((recipient) => (
+                        <SelectItem key={recipient.id} value={recipient.id}>
+                          {recipient.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button onClick={() => setShowRecipientForm(true)} variant="outline" size="sm" className="gap-2">
+                <UserPlus className="w-4 h-4" />
+                Add Person
+              </Button>
+              <Button onClick={() => setShowEmergencySummary(true)} variant="secondary" className="gap-2">
+                <AlertCircle className="w-4 h-4" />
+                Emergency Summary
+              </Button>
+            </div>
           </div>
         </div>
       </header>
@@ -458,16 +593,23 @@ export default function Home() {
               <p className="text-lg text-muted-foreground">
                 Convenient document storage, medical record management, and emergency information generation for chronic condition patients
               </p>
-              <div className="flex gap-3">
-                <Button onClick={() => setShowDocumentForm(true)} size="lg" className="gap-2">
-                  <FileText className="w-5 h-5" />
-                  Add Document
-                </Button>
-                <Button onClick={() => setShowMedicalForm(true)} size="lg" variant="secondary" className="gap-2">
-                  <Heart className="w-5 h-5" />
-                  Add Medical Record
-                </Button>
-              </div>
+              {selectedRecipient && (
+                <>
+                  <p className="text-sm text-muted-foreground">
+                    Currently managing care for: <span className="font-semibold text-foreground">{careRecipients.find(r => r.id === selectedRecipient)?.name}</span>
+                  </p>
+                  <div className="flex gap-3">
+                    <Button onClick={() => setShowDocumentForm(true)} size="lg" className="gap-2">
+                      <FileText className="w-5 h-5" />
+                      Add Document
+                    </Button>
+                    <Button onClick={() => setShowMedicalForm(true)} size="lg" variant="secondary" className="gap-2">
+                      <Heart className="w-5 h-5" />
+                      Add Medical Record
+                    </Button>
+                  </div>
+                </>
+              )}
             </div>
             <div className="relative h-64 lg:h-80 rounded-2xl overflow-hidden shadow-lg bg-gradient-to-br from-primary/20 to-secondary/20 flex items-center justify-center">
               <Heart className="w-32 h-32 text-primary/30" />
@@ -477,6 +619,83 @@ export default function Home() {
       </section>
 
       <div className="container mx-auto px-4 py-8">
+        {/* No recipient selected state */}
+        {!selectedRecipient && careRecipients.length === 0 && (
+          <Card className="max-w-2xl mx-auto text-center py-12">
+            <CardHeader>
+              <CardTitle className="text-2xl">Welcome to CareVault</CardTitle>
+              <CardDescription>
+                Start by adding the person you're caring for
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button onClick={() => setShowRecipientForm(true)} size="lg" className="gap-2">
+                <UserPlus className="w-5 h-5" />
+                Add Person to Care For
+              </Button>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Add Care Recipient Form Modal */}
+        {showRecipientForm && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+            <Card className="w-full max-w-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Add Person to Care For</CardTitle>
+                  <Button variant="ghost" size="icon" onClick={() => setShowRecipientForm(false)}>
+                    <X className="w-4 h-4" />
+                  </Button>
+                </div>
+                <CardDescription>Add someone you're providing care for</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="recipient-name">Name *</Label>
+                  <Input
+                    id="recipient-name"
+                    placeholder="e.g., John Doe"
+                    value={recipientForm.name}
+                    onChange={(e) => setRecipientForm({...recipientForm, name: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipient-dob">Date of Birth</Label>
+                  <Input
+                    id="recipient-dob"
+                    type="date"
+                    value={recipientForm.date_of_birth}
+                    onChange={(e) => setRecipientForm({...recipientForm, date_of_birth: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipient-relationship">Relationship</Label>
+                  <Input
+                    id="recipient-relationship"
+                    placeholder="e.g., Mother, Father, Friend"
+                    value={recipientForm.relationship}
+                    onChange={(e) => setRecipientForm({...recipientForm, relationship: e.target.value})}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="recipient-notes">Notes</Label>
+                  <Textarea
+                    id="recipient-notes"
+                    placeholder="Any additional information..."
+                    value={recipientForm.notes}
+                    onChange={(e) => setRecipientForm({...recipientForm, notes: e.target.value})}
+                  />
+                </div>
+                <div className="flex gap-3">
+                  <Button onClick={handleAddRecipient} className="flex-1">Add Person</Button>
+                  <Button onClick={() => setShowRecipientForm(false)} variant="outline" className="flex-1">Cancel</Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {/* Document Form Modal */}
         {showDocumentForm && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -708,7 +927,8 @@ export default function Home() {
 
         <div className="grid lg:grid-cols-2 gap-8">
           {/* Documents Section */}
-          <div className="space-y-4">
+          {selectedRecipient && (
+            <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Document Management</h2>
               <Button onClick={() => setShowDocumentForm(true)} size="sm" variant="outline">
@@ -791,10 +1011,11 @@ export default function Home() {
                 )
               })}
             </div>
-          </div>
+          )}
 
           {/* Medical Records Section */}
-          <div className="space-y-4">
+          {selectedRecipient && (
+            <div className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-bold">Medical Records</h2>
               <Button onClick={() => setShowMedicalForm(true)} size="sm" variant="outline">
@@ -855,10 +1076,11 @@ export default function Home() {
                 )
               })}
             </div>
-          </div>
+          )}
         </div>
 
-        <Card className="mt-8">
+        {selectedRecipient && (
+          <Card className="mt-8">
           <CardHeader>
             <CardTitle>Quick Actions</CardTitle>
             <CardDescription>Commonly used features</CardDescription>
@@ -884,6 +1106,7 @@ export default function Home() {
             </div>
           </CardContent>
         </Card>
+        )}
         
         {/* Appointment Modal */}
         {showAppointmentModal && (

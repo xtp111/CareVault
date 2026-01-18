@@ -3,6 +3,36 @@ import { test, expect } from '@playwright/test'
 test.describe('CareVault - Use Case Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/')
+    // Wait for care recipients to load
+    await page.waitForTimeout(1000)
+  })
+
+  test.describe('Use Case 0: Care Recipient Selection', () => {
+    test('UC0.1 - User views care recipient selector', async ({ page }) => {
+      // Verify care recipient selector is visible
+      await expect(page.getByText('Select Care Recipient')).toBeVisible()
+    })
+
+    test('UC0.2 - User adds new care recipient', async ({ page }) => {
+      // Click add care recipient button
+      const addRecipientButton = page.locator('button').filter({ has: page.locator('svg.lucide-user-plus') })
+      await addRecipientButton.first().click()
+      
+      // Wait for modal
+      await page.waitForTimeout(500)
+      
+      // Fill in care recipient details
+      await page.getByLabel('Name *').fill('John Doe')
+      await page.getByLabel('Relationship').fill('Father')
+      await page.getByLabel('Date of Birth').fill('1950-01-01')
+      await page.getByLabel('Notes').fill('Primary care recipient')
+      
+      // Submit form
+      await page.getByRole('button', { name: /Add Care Recipient/i }).click()
+      
+      // Verify new recipient appears in selector
+      await expect(page.getByText('John Doe')).toBeVisible()
+    })
   })
 
   test.describe('Use Case 1: Managing Medical Documents', () => {

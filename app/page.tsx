@@ -352,46 +352,46 @@ export default function Home() {
   }
   
   const handleAddAppointment = async () => {
-      if (!appointmentForm.title.trim()) {
-        alert('Please enter an appointment title');
-        return;
-      }
+    if (!appointmentForm.title.trim()) {
+      alert('Please enter an appointment title');
+      return;
+    }
+    
+    if (!selectedRecipient) {
+      alert('Please select a care recipient first');
+      return;
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('appointments')
+        .insert([{
+          ...appointmentForm,
+          care_recipient_id: selectedRecipient
+        }])
+        .select();
       
-      if (!selectedRecipient) {
-        alert('Please select a care recipient first');
-        return;
+      if (data && !error) {
+        setAppointments(prev => [...prev, data[0]]);
+        setAppointmentForm({
+          title: '',
+          description: '',
+          appointment_date: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
+          remind_before_minutes: 30,
+          repeat_interval: 'none'
+        });
+        setShowAppointmentModal(false);
+      } else {
+        alert('Error adding appointment: ' + error?.message);
       }
-      
-      try {
-        const { data, error } = await supabase
-          .from('appointments')
-          .insert([{
-            ...appointmentForm,
-            care_recipient_id: selectedRecipient
-          }])
-          .select();
-        
-        if (data && !error) {
-          setAppointments(prev => [...prev, data[0]]);
-          setAppointmentForm({
-            title: '',
-            description: '',
-            appointment_date: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
-            remind_before_minutes: 30,
-            repeat_interval: 'none'
-          });
-          setShowAppointmentModal(false);
-        } else {
-          alert('Error adding appointment: ' + error?.message);
-        }
-      } catch (error) {
-        console.error('Error adding appointment:', error);
-        alert('Error adding appointment');
-      }
+    } catch (error) {
+      console.error('Error adding appointment:', error);
+      alert('Error adding appointment');
+    }
   };
   
   const handleDeleteAppointment = async (id: string) => {
-      if (!confirm('Are you sure you want to delete this appointment?')) return;
+    if (!confirm('Are you sure you want to delete this appointment?')) return;
       
       try {
         const { error } = await supabase

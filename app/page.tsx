@@ -97,7 +97,8 @@ export default function Home() {
   const [recipientForm, setRecipientForm] = useState({
     name: '',
     date_of_birth: '',
-    relationship: '',
+    relationship: 'Parent',
+    customRelationship: '',
     notes: ''
   })
   
@@ -392,11 +393,24 @@ export default function Home() {
       return
     }
     
+    // Use custom relationship if "Other" is selected
+    const finalRelationship = recipientForm.relationship === 'Other' 
+      ? recipientForm.customRelationship 
+      : recipientForm.relationship
+    
+    if (!finalRelationship.trim()) {
+      alert('Please specify the relationship')
+      return
+    }
+    
     try {
       const { data, error } = await supabase
         .from('care_recipients')
         .insert([{
-          ...recipientForm,
+          name: recipientForm.name,
+          date_of_birth: recipientForm.date_of_birth,
+          relationship: finalRelationship,
+          notes: recipientForm.notes,
           is_active: true
         }])
         .select()
@@ -407,7 +421,8 @@ export default function Home() {
         setRecipientForm({
           name: '',
           date_of_birth: '',
-          relationship: '',
+          relationship: 'Parent',
+          customRelationship: '',
           notes: ''
         })
         setShowRecipientForm(false)
@@ -637,13 +652,32 @@ export default function Home() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="recipient-relation">Relationship</Label>
-                  <Input
+                  <select
                     id="recipient-relation"
-                    placeholder="e.g., Parent, Spouse, Child"
+                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                     value={recipientForm.relationship}
-                    onChange={(e) => setRecipientForm({...recipientForm, relationship: e.target.value})}
-                  />
+                    onChange={(e) => setRecipientForm({...recipientForm, relationship: e.target.value, customRelationship: ''})}
+                  >
+                    <option value="Parent">Parent (父母)</option>
+                    <option value="Spouse">Spouse (配偶)</option>
+                    <option value="Child">Child (子女)</option>
+                    <option value="Grandparent">Grandparent (祖父母)</option>
+                    <option value="Sibling">Sibling (兄弟姐妹)</option>
+                    <option value="Friend">Friend (朋友)</option>
+                    <option value="Other">Other (其他)</option>
+                  </select>
                 </div>
+                {recipientForm.relationship === 'Other' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="custom-relation">Specify Relationship *</Label>
+                    <Input
+                      id="custom-relation"
+                      placeholder="e.g., Cousin, Neighbor"
+                      value={recipientForm.customRelationship}
+                      onChange={(e) => setRecipientForm({...recipientForm, customRelationship: e.target.value})}
+                    />
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label htmlFor="recipient-notes">Notes</Label>
                   <Textarea

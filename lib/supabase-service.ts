@@ -192,6 +192,16 @@ export const medicalRecordService = {
 // ===================================================================
 
 export const appointmentService = {
+  // Get all appointments (for calendar view)
+  async getAllAppointments(): Promise<Appointment[]> {
+    if (!supabase) return []
+    const { data, error } = await supabase
+      .from('appointments')
+      .select('*')
+      .order('appointment_date', { ascending: true })
+    return error ? [] : data
+  },
+
   // Get all appointments for a care recipient
   async getAppointments(careRecipientId: string): Promise<Appointment[]> {
     if (!supabase) return []

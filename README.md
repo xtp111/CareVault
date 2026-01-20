@@ -1,243 +1,252 @@
 # CareVault
 
-一个为慢性病患者和照护者设计的医疗信息管理系统。
+A medical information management system designed for patients with chronic conditions and their caregivers.
 
-## 🎯 项目简介
+## Project Overview
 
-CareVault 是一个基于 Next.js 和 Supabase 的全栈医疗文档管理应用,帮助照护者高效管理受照护人的医疗信息、用药记录、预约提醒和重要文档。
+CareVault is a full-stack medical document management application built with Next.js and Supabase. It helps caregivers efficiently manage care recipients' medical information, medication records, appointment reminders, and important documents.
 
-### 核心功能
+### Core Features
 
-- **👥 多用户管理**: 支持照护者(Caregiver)和患者(Patient)双角色
-- **🏥 受照护人管理**: 一个照护者可管理多个受照护人
-- **💊 用药记录**: 记录和追踪药物信息、剂量、用法
-- **📅 预约提醒**: 管理医疗预约,支持重复提醒
-- **📄 文档存储**: 上传和管理医疗、法律、财务等重要文档
-- **🚨 紧急摘要**: 快速生成包含关键医疗信息的紧急摘要
-- **🔒 数据隔离**: 基于 RLS 的严格数据权限控制
+- **Multi-User Management**: Support for both Caregiver and Patient roles
+- **Care Recipient Management**: One caregiver can manage multiple care recipients
+- **Medication Records**: Record and track medication information, dosages, and usage instructions
+- **Appointment Reminders**: Manage medical appointments with recurring reminders
+- **Document Storage**: Upload and manage important medical, legal, and financial documents
+- **Emergency Summary**: Quickly generate emergency summaries with key medical information
+- **Data Isolation**: Strict data permission control based on Row Level Security (RLS)
 
-## 🛠️ 技术栈
+## Technology Stack
 
-- **前端框架**: Next.js 14 (App Router)
-- **编程语言**: TypeScript
-- **样式方案**: Tailwind CSS + shadcn/ui
-- **数据库**: Supabase (PostgreSQL)
-- **认证**: Supabase Authentication
-- **存储**: Supabase Storage
-- **部署**: Vercel
+- **Frontend Framework**: Next.js 14 (App Router)
+- **Programming Language**: TypeScript
+- **Styling**: Tailwind CSS + shadcn/ui
+- **Database**: Supabase (PostgreSQL)
+- **Authentication**: Supabase Authentication
+- **Storage**: Supabase Storage
+- **Deployment**: Vercel
 
-## 📁 项目结构
+## Project Structure
 
 ```
 caregiver_app_project/
-├── app/                      # Next.js 应用目录
-│   ├── dashboard/           # 仪表盘页面
-│   ├── login/               # 登录页面
-│   ├── globals.css          # 全局样式
-│   ├── layout.tsx           # 根布局
-│   └── page.tsx             # 首页
-├── components/              # React 组件
-│   ├── ui/                  # shadcn/ui 组件
-│   └── EmergencySummary.tsx # 紧急摘要组件
+├── app/                      # Next.js app directory
+│   ├── dashboard/           # Dashboard page
+│   ├── patients/            # Patient list page
+│   ├── calendar/            # Calendar view page
+│   ├── login/               # Login page
+│   ├── globals.css          # Global styles
+│   ├── layout.tsx           # Root layout
+│   └── page.tsx             # Home page
+├── components/              # React components
+│   ├── ui/                  # shadcn/ui components
+│   └── EmergencySummary.tsx # Emergency summary component
 ├── contexts/                # React Context
-│   └── AuthContext.tsx      # 认证上下文
-├── hooks/                   # 自定义 Hooks
-│   └── usePermissions.ts    # 权限管理 Hook
-├── lib/                     # 工具库
-│   ├── supabase.ts         # Supabase 客户端
-│   ├── supabase-service.ts # 数据库服务层
-│   ├── permissions.ts      # 权限配置
-│   └── utils.ts            # 工具函数
-├── types/                   # TypeScript 类型定义
-│   └── supabase.ts         # 数据库类型
-├── database/                # 数据库脚本
+│   └── AuthContext.tsx      # Authentication context
+├── hooks/                   # Custom hooks
+│   └── usePermissions.ts    # Permission management hook
+├── lib/                     # Utility libraries
+│   ├── supabase.ts         # Supabase client
+│   ├── supabase-service.ts # Database service layer
+│   ├── permissions.ts      # Permission configuration
+│   └── utils.ts            # Utility functions
+├── types/                   # TypeScript type definitions
+│   └── supabase.ts         # Database types
+├── database/                # Database scripts
 │   └── CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql
-├── public/                  # 静态资源
-└── package.json            # 项目依赖
+├── docs/                    # Documentation
+│   ├── CareVault_Complete_Documentation.md
+│   └── Deployment.md
+└── package.json            # Project dependencies
 ```
 
-## 🚀 快速开始
+## Quick Start
 
-### 环境要求
+### Requirements
 
 - Node.js 18+
-- npm 或 yarn
-- Supabase 账号
+- npm or yarn
+- Supabase account
 
-### 安装步骤
+### Installation Steps
 
-1. **克隆项目**
+1. **Clone the repository**
 
 ```bash
 git clone <repository-url>
 cd caregiver_app_project
 ```
 
-2. **安装依赖**
+2. **Install dependencies**
 
 ```bash
 npm install
 ```
 
-3. **配置环境变量**
+3. **Configure environment variables**
 
-创建 `.env.local` 文件:
+Create a `.env.local` file:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-4. **初始化数据库**
+4. **Initialize database**
 
-- 登录 [Supabase Dashboard](https://supabase.com/dashboard)
-- 进入 SQL Editor
-- 执行 `database/CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql` 中的所有内容
-- 等待执行完成
+- Login to [Supabase Dashboard](https://supabase.com/dashboard)
+- Go to SQL Editor
+- Execute all contents from `database/CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql`
+- Wait for execution to complete
 
-5. **创建用户并设置角色**
+5. **Create user and set role**
 
 ```sql
--- 在 Supabase SQL Editor 中执行
--- 注册用户后,设置为 caregiver 角色
+-- Execute in Supabase SQL Editor
+-- After user registration, set role to caregiver
 INSERT INTO users (id, role, full_name)
 VALUES (
-  'your-user-uuid',  -- 从 auth.users 表获取
+  'your-user-uuid',  -- Get from auth.users table
   'caregiver',
   'Your Name'
 )
 ON CONFLICT (id) DO UPDATE SET role = 'caregiver';
 ```
 
-6. **启动开发服务器**
+6. **Start development server**
 
 ```bash
 npm run dev
 ```
 
-访问 `http://localhost:3000`
+Visit `http://localhost:3000`
 
-## 📊 数据库架构
+## Database Architecture
 
-### 核心表结构
+### Core Tables
 
-- **users**: 用户基本信息,关联 Supabase Auth
-- **care_recipients**: 受照护人信息(核心实体)
-- **medical_records**: 医疗记录(药物、病情、医生)
-- **appointments**: 预约提醒
-- **documents**: 文档管理
-- **emergency_contacts**: 紧急联系人
+- **users**: User basic information, linked to Supabase Auth
+- **care_recipients**: Care recipient information (core entity)
+- **medical_records**: Medical records (medications, conditions, doctors)
+- **appointments**: Appointment reminders
+- **documents**: Document management
+- **emergency_contacts**: Emergency contacts
 
-### 数据隔离
+### Data Isolation
 
-- 使用 Row Level Security (RLS) 实现多用户数据隔离
-- 每个照护者只能访问自己管理的受照护人数据
-- 患者角色为只读权限
+- Row Level Security (RLS) implements multi-user data isolation
+- Each caregiver can only access their own care recipients' data
+- Patient role has read-only permissions
 
-## 🔐 用户角色与权限
+## User Roles and Permissions
 
-| 角色 | 权限 |
-|------|------|
-| **Caregiver** (照护者) | 完整的 CRUD 权限,可管理受照护人、医疗记录、预约、文档 |
-| **Patient** (患者) | 只读权限,可查看自己的医疗信息 |
-| **Admin** (管理员) | 预留角色,暂未实现 |
+| Role | Permissions |
+|------|-------------|
+| **Caregiver** | Full CRUD permissions, can manage care recipients, medical records, appointments, documents |
+| **Patient** | Read-only permissions, can view their own medical information |
+| **Admin** | Reserved role, not yet implemented |
 
-## 📝 开发指南
+## Development Guide
 
-### 可用脚本
+### Available Scripts
 
 ```bash
-npm run dev      # 启动开发服务器 (localhost:3000)
-npm run build    # 构建生产版本
-npm run start    # 启动生产服务器
-npm run lint     # 运行 ESLint 检查
+npm run dev      # Start development server (localhost:3000)
+npm run build    # Build for production
+npm run start    # Start production server
+npm run lint     # Run ESLint checks
 ```
 
-### 添加新功能
+### Adding New Features
 
-1. 在 `types/supabase.ts` 中定义 TypeScript 类型
-2. 在 `lib/supabase-service.ts` 中添加数据库服务函数
-3. 在 `hooks/` 中创建自定义 Hook (如需要)
-4. 在 `components/` 中实现 UI 组件
-5. 更新数据库 schema (如需要新表)
+1. Define TypeScript types in `types/supabase.ts`
+2. Add database service functions in `lib/supabase-service.ts`
+3. Create custom hooks in `hooks/` (if needed)
+4. Implement UI components in `components/`
+5. Update database schema (if new tables are needed)
 
-### 代码规范
+### Code Standards
 
-- 使用 TypeScript 进行类型检查
-- 遵循 Next.js 14 App Router 最佳实践
-- 使用 Tailwind CSS 进行样式编写
-- 组件使用 shadcn/ui 设计系统
+- Use TypeScript for type checking
+- Follow Next.js 14 App Router best practices
+- Use Tailwind CSS for styling
+- Use shadcn/ui design system for components
 
-## 🚢 部署
+## Deployment
 
-### Vercel 部署 (推荐)
+### Vercel Deployment (Recommended)
 
-1. 将代码推送到 GitHub
-2. 在 [Vercel](https://vercel.com) 导入项目
-3. 配置环境变量 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-4. 部署完成后自动可用
+1. Push code to GitHub
+2. Import project in [Vercel](https://vercel.com)
+3. Configure environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
+4. Deployment automatically available after completion
 
-### 环境变量配置
+### Environment Variable Configuration
 
-确保在 Vercel Dashboard 中设置以下环境变量:
+Ensure the following environment variables are set in Vercel Dashboard:
 
 ```
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-## 🗄️ 数据库维护
+## Database Maintenance
 
-### 重建数据库
+### Rebuild Database
 
-如需完全重建数据库:
+To completely rebuild the database:
 
 ```bash
-# 在 Supabase SQL Editor 中执行
+# Execute in Supabase SQL Editor
 database/CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql
 ```
 
-⚠️ **警告**: 此操作会删除所有现有数据!
+**Warning**: This operation will delete all existing data!
 
-### 备份数据
+### Backup Data
 
-建议定期在 Supabase Dashboard 中创建数据库备份。
+It is recommended to regularly create database backups in Supabase Dashboard.
 
-## 🐛 常见问题
+## Common Issues
 
-### 1. 登录后看不到"Add Patient"按钮?
+### 1. Cannot see "Add Patient" button after login?
 
-**原因**: 用户角色为 `patient` (只读)
+**Cause**: User role is `patient` (read-only)
 
-**解决**:
+**Solution**:
 ```sql
--- 在 Supabase SQL Editor 中执行
+-- Execute in Supabase SQL Editor
 UPDATE users SET role = 'caregiver' WHERE id = 'your-user-uuid';
 ```
 
-### 2. 添加患者时报错 "Failed to add patient"?
+### 2. Error "Failed to add patient" when adding patient?
 
-**可能原因**:
-- 数据库 schema 未正确初始化
-- RLS 策略配置错误
-- 用户未在 `users` 表中注册
+**Possible causes**:
+- Database schema not correctly initialized
+- RLS policy configuration error
+- User not registered in `users` table
 
-**解决**: 检查浏览器控制台错误信息,确认数据库 schema 已正确执行
+**Solution**: Check browser console error messages, confirm database schema has been correctly executed
 
-### 3. 上传文档失败?
+### 3. Document upload fails?
 
-**原因**: Storage bucket 未创建或权限配置错误
+**Cause**: Storage bucket not created or permission configuration error
 
-**解决**: 确保执行了完整的数据库初始化脚本
+**Solution**: Ensure complete database initialization script has been executed
 
-## 📄 许可证
+## Documentation
+
+- **Complete Documentation**: See `docs/CareVault_Complete_Documentation.md`
+- **Deployment Guide**: See `docs/Deployment.md`
+
+## License
 
 MIT License
 
-## 🤝 贡献
+## Contributing
 
-欢迎提交 Issue 和 Pull Request!
+Issues and Pull Requests are welcome!
 
 ---
 
-**Built with ❤️ using Next.js and Supabase**
+**Built with Next.js and Supabase**

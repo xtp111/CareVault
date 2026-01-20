@@ -1,14 +1,16 @@
 'use client'
 
 import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit, Shield } from 'lucide-react'
+import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit, Shield, LogOut, UserCircle } from 'lucide-react'
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext'
 import { usePermissions } from '@/hooks/usePermissions'
+import { supabase } from '@/lib/supabase'
 import EmergencySummary from '@/components/EmergencySummary'
 import { 
   careRecipientService,
@@ -30,6 +32,7 @@ type DocumentCategory = 'legal' | 'medical' | 'financial' | 'identification'
 function CaregiverDashboard() {
   const { user, userRole, userProfile } = useAuth()
   const permissions = usePermissions()
+  const router = useRouter()
   
   const [patients, setPatients] = useState<CareRecipient[]>([])
   const [selectedPatient, setSelectedPatient] = useState<CareRecipient | null>(null)
@@ -44,6 +47,11 @@ function CaregiverDashboard() {
   const [showAppointmentForm, setShowAppointmentForm] = useState(false)
   const [showDocumentForm, setShowDocumentForm] = useState(false)
   const [showEmergencySummary, setShowEmergencySummary] = useState(false)
+  const [showProfileModal, setShowProfileModal] = useState(false)
+  
+  // Search and filter states
+  const [medicationSearch, setMedicationSearch] = useState('')
+  const [appointmentSearch, setAppointmentSearch] = useState('')
   
   const [uploadingFile, setUploadingFile] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
@@ -60,12 +68,49 @@ function CaregiverDashboard() {
     emergency_contact_phone: '',
     emergency_contact_relationship: ''
   })
+  
+  // Common diagnosis suggestions
+  const commonDiagnoses = [
+    'Alzheimer\'s Disease',
+    'Dementia',
+    'Parkinson\'s Disease',
+    'Diabetes Type 2',
+    'Hypertension',
+    'Heart Failure',
+    'COPD',
+    'Arthritis',
+    'Osteoporosis',
+    'Depression'
+  ]
+  
+  const [diagnosisSuggestions, setDiagnosisSuggestions] = useState<string[]>([])
+  const [showDiagnosisSuggestions, setShowDiagnosisSuggestions] = useState(false)
 
   const [medicationForm, setMedicationForm] = useState({
     name: '',
     details: '',
     date: new Date().toISOString().split('T')[0]
   })
+  
+  // Common medications
+  const commonMedications = [
+    'Aspirin',
+    'Metformin',
+    'Lisinopril',
+    'Atorvastatin',
+    'Levothyroxine',
+    'Amlodipine',
+    'Omeprazole',
+    'Losartan',
+    'Gabapentin',
+    'Hydrochlorothiazide',
+    'Sertraline',
+    'Simvastatin',
+    'Donepezil'
+  ]
+  
+  const [medicationSuggestions, setMedicationSuggestions] = useState<string[]>([])
+  const [showMedicationSuggestions, setShowMedicationSuggestions] = useState(false)
 
   const [careLogForm, setCareLogForm] = useState({
     name: '',
@@ -467,6 +512,45 @@ function CaregiverDashboard() {
     .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
 
   const activeMedications = medications
+  
+  // Filtered medications and appointments
+  const filteredMedications = activeMedications.filter(med => 
+    medicationSearch === '' || 
+    med.title.toLowerCase().includes(medicationSearch.toLowerCase()) ||
+    med.description?.toLowerCase().includes(medicationSearch.toLowerCase())
+  )
+  
+  const filteredAppointments = upcomingAppointments.filter(appt =>
+    appointmentSearch === '' ||
+    appt.title.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
+    appt.description?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
+    appt.location?.toLowerCase().includes(appointmentSearch.toLowerCase())
+  )
+
+  // Urgent appointments within 7 days
+  const now = new Date()
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+  const urgentAppointments = upcomingAppointments.filter(a => {
+    const apptDate = new Date(a.appointment_date)
+    return apptDate <= weekFromNow
+  })
+
+  const getUrgencyLevel = (date: string) => {
+    const apptDate = new Date(date)
+    const hoursUntil = (apptDate.getTime() - now.getTime()) / (1000 * 60 * 60)
+    if (hoursUntil < 24) return 'critical'
+    if (hoursUntil < 72) return 'warning'
+    return 'normal'
+  }
+
+  const getTimeUntil = (date: string) => {
+    const apptDate = new Date(date)
+    const hoursUntil = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60))
+    if (hoursUntil < 1) return 'Less than 1 hour'
+    if (hoursUntil < 24) return `${hoursUntil} hour${hoursUntil !== 1 ? 's' : ''}`
+    const daysUntil = Math.floor(hoursUntil / 24)
+    return `${daysUntil} day${daysUntil !== 1 ? 's' : ''}`
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -518,17 +602,132 @@ function CaregiverDashboard() {
               )}
               
               {permissions.isCaregiver && (
-                <Button onClick={() => setShowPatientForm(true)}>
-                  <Users className="w-4 h-4 mr-2" />
-                  Add Patient
-                </Button>
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/calendar')}
+                    className="gap-2"
+                  >
+                    <Calendar className="w-4 h-4" />
+                    Calendar
+                  </Button>
+                  <Button
+                    variant="outline"
+                    onClick={() => router.push('/patients')}
+                    className="gap-2"
+                  >
+                    <Users className="w-4 h-4" />
+                    All Patients
+                  </Button>
+                  <Button onClick={() => {
+                    setSelectedPatient(null)
+                    resetPatientForm()
+                    setShowPatientForm(true)
+                  }}>
+                    <Users className="w-4 h-4 mr-2" />
+                    Add Patient
+                  </Button>
+                </>
               )}
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setShowProfileModal(true)}
+                title="Profile"
+              >
+                <UserCircle className="w-4 h-4" />
+              </Button>
+              
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={async () => {
+                  await supabase?.auth.signOut()
+                  router.push('/login')
+                }}
+                title="Logout"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
       </header>
 
       <main className="container mx-auto px-4 py-8">
+        {/* Urgent Appointments Alert */}
+        {selectedPatient && urgentAppointments.length > 0 && (
+          <div className="mb-6">
+            <Card className="border-l-4 border-orange-500 bg-orange-50/50">
+              <CardHeader className="pb-3">
+                <div className="flex items-center gap-2">
+                  <AlertCircle className="w-5 h-5 text-orange-600" />
+                  <CardTitle className="text-lg text-orange-900">
+                    Upcoming Appointments ({urgentAppointments.length})
+                  </CardTitle>
+                </div>
+                <CardDescription className="text-orange-700">
+                  Appointments scheduled within the next 7 days
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {urgentAppointments.map(appt => {
+                  const urgency = getUrgencyLevel(appt.appointment_date)
+                  const timeUntil = getTimeUntil(appt.appointment_date)
+                  
+                  return (
+                    <div 
+                      key={appt.id} 
+                      className={`p-3 rounded-lg border ${
+                        urgency === 'critical' 
+                          ? 'bg-red-50 border-red-200' 
+                          : urgency === 'warning'
+                          ? 'bg-yellow-50 border-yellow-200'
+                          : 'bg-blue-50 border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-3">
+                        <div className="flex-1">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                              urgency === 'critical'
+                                ? 'bg-red-100 text-red-800'
+                                : urgency === 'warning'
+                                ? 'bg-yellow-100 text-yellow-800'
+                                : 'bg-blue-100 text-blue-800'
+                            }`}>
+                              {urgency === 'critical' ? 'URGENT' : urgency === 'warning' ? 'SOON' : 'UPCOMING'}
+                            </span>
+                            <span className="text-sm font-medium">{appt.title}</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            {new Date(appt.appointment_date).toLocaleString('en-US', {
+                              weekday: 'short',
+                              month: 'short',
+                              day: 'numeric',
+                              hour: 'numeric',
+                              minute: '2-digit'
+                            })}
+                          </p>
+                          <p className="text-xs font-medium text-muted-foreground mt-1">
+                            In {timeUntil}
+                          </p>
+                          {appt.description && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {appt.description}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
         {!selectedPatient ? (
           permissions.isCaregiver ? (
             // Caregiver Empty State - Distinct from Patient Portal
@@ -598,6 +797,65 @@ function CaregiverDashboard() {
           )
         ) : (
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            {/* Data Overview Cards */}
+            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active Medications</p>
+                      <p className="text-3xl font-bold">{activeMedications.length}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+                      <Pill className="w-6 h-6 text-blue-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Upcoming Appointments</p>
+                      <p className="text-3xl font-bold">{upcomingAppointments.length}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+                      <Calendar className="w-6 h-6 text-green-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Care Logs</p>
+                      <p className="text-3xl font-bold">{careLogs.length}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-purple-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Documents</p>
+                      <p className="text-3xl font-bold">{documents.length}</p>
+                    </div>
+                    <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-orange-600" />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
             {/* Patient Profile */}
             <Card className="lg:col-span-3">
               <CardHeader>
@@ -677,47 +935,85 @@ function CaregiverDashboard() {
             {/* Medications */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Pill className="w-5 h-5" />
-                    <CardTitle>Medications</CardTitle>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Pill className="w-5 h-5" />
+                      <CardTitle>Medications</CardTitle>
+                    </div>
+                    {permissions.hasPermission('canManageMedications') && (
+                      <Button size="sm" onClick={() => setShowMedicationForm(true)}>
+                        Add
+                      </Button>
+                    )}
                   </div>
-                  {permissions.hasPermission('canManageMedications') && (
-                    <Button size="sm" onClick={() => setShowMedicationForm(true)}>
-                      Add
-                    </Button>
-                  )}
+                  <div className="relative">
+                    <Input
+                      placeholder="Search medications..."
+                      value={medicationSearch}
+                      onChange={(e) => setMedicationSearch(e.target.value)}
+                      className="pr-8"
+                    />
+                    {medicationSearch && (
+                      <button
+                        onClick={() => setMedicationSearch('')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {activeMedications.length === 0 ? (
+                {filteredMedications.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No active medications
+                    {medicationSearch ? 'No matching medications' : 'No active medications'}
                   </p>
                 ) : (
-                  <div className="space-y-3">
-                    {activeMedications.map(med => (
-                      <div key={med.id} className="p-3 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium">{med.title}</p>
-                            {med.description && <p className="text-sm text-muted-foreground">{med.description}</p>}
-                            <p className="text-xs text-muted-foreground">{new Date(med.date).toLocaleDateString()}</p>
-                          </div>
-                          {permissions.hasPermission('canManageMedications') && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDeleteMedication(med.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
+                  <>
+                    {/* Medication Timeline */}
+                    <div className="mb-6 relative">
+                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                      <div className="space-y-4">
+                        {filteredMedications
+                          .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+                          .map((med, index) => (
+                            <div key={med.id} className="relative pl-10">
+                              <div className="absolute left-2 w-4 h-4 bg-blue-500 rounded-full border-2 border-white"></div>
+                              <div className="p-3 border rounded-lg bg-white">
+                                <div className="flex items-start justify-between">
+                                  <div className="flex-1">
+                                    <p className="font-medium">{med.title}</p>
+                                    {med.description && <p className="text-sm text-muted-foreground mt-1">{med.description}</p>}
+                                    <div className="flex items-center gap-2 mt-2">
+                                      <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
+                                        Started {new Date(med.date).toLocaleDateString()}
+                                      </span>
+                                      {index === 0 && (
+                                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded">
+                                          Current
+                                        </span>
+                                      )}
+                                    </div>
+                                  </div>
+                                  {permissions.hasPermission('canManageMedications') && (
+                                    <Button
+                                      variant="ghost"
+                                      size="icon"
+                                      className="h-8 w-8"
+                                      onClick={() => handleDeleteMedication(med.id)}
+                                    >
+                                      <Trash2 className="w-4 h-4 text-destructive" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  </>
                 )}
               </CardContent>
             </Card>
@@ -725,26 +1021,44 @@ function CaregiverDashboard() {
             {/* Appointments */}
             <Card>
               <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-5 h-5" />
-                    <CardTitle>Appointments</CardTitle>
+                <div className="flex flex-col gap-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Calendar className="w-5 h-5" />
+                      <CardTitle>Appointments</CardTitle>
+                    </div>
+                    {permissions.hasPermission('canManageAppointments') && (
+                      <Button size="sm" onClick={() => setShowAppointmentForm(true)}>
+                        Add
+                      </Button>
+                    )}
                   </div>
-                  {permissions.hasPermission('canManageAppointments') && (
-                    <Button size="sm" onClick={() => setShowAppointmentForm(true)}>
-                      Add
-                    </Button>
-                  )}
+                  <div className="relative">
+                    <Input
+                      placeholder="Search appointments..."
+                      value={appointmentSearch}
+                      onChange={(e) => setAppointmentSearch(e.target.value)}
+                      className="pr-8"
+                    />
+                    {appointmentSearch && (
+                      <button
+                        onClick={() => setAppointmentSearch('')}
+                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    )}
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
-                {upcomingAppointments.length === 0 ? (
+                {filteredAppointments.length === 0 ? (
                   <p className="text-sm text-muted-foreground text-center py-4">
-                    No upcoming appointments
+                    {appointmentSearch ? 'No matching appointments' : 'No upcoming appointments'}
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {upcomingAppointments.slice(0, 5).map(appt => (
+                    {filteredAppointments.slice(0, 5).map(appt => (
                       <div key={appt.id} className="p-3 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -938,17 +1252,66 @@ function CaregiverDashboard() {
                 </div>
                 <div>
                   <Label>Diagnosis</Label>
-                  <Input
-                    value={patientForm.diagnosis}
-                    onChange={(e) => setPatientForm({ ...patientForm, diagnosis: e.target.value })}
-                    placeholder="Primary diagnosis"
-                  />
+                  <div className="relative">
+                    <Input
+                      value={patientForm.diagnosis}
+                      onChange={(e) => {
+                        const value = e.target.value
+                        setPatientForm({ ...patientForm, diagnosis: value })
+                        
+                        // Filter suggestions
+                        if (value.length > 0) {
+                          const filtered = commonDiagnoses.filter(d => 
+                            d.toLowerCase().includes(value.toLowerCase())
+                          )
+                          setDiagnosisSuggestions(filtered)
+                          setShowDiagnosisSuggestions(filtered.length > 0)
+                        } else {
+                          setShowDiagnosisSuggestions(false)
+                        }
+                      }}
+                      onFocus={() => {
+                        if (patientForm.diagnosis.length > 0) {
+                          const filtered = commonDiagnoses.filter(d => 
+                            d.toLowerCase().includes(patientForm.diagnosis.toLowerCase())
+                          )
+                          if (filtered.length > 0) {
+                            setDiagnosisSuggestions(filtered)
+                            setShowDiagnosisSuggestions(true)
+                          }
+                        }
+                      }}
+                      onBlur={() => {
+                        // Delay to allow click on suggestion
+                        setTimeout(() => setShowDiagnosisSuggestions(false), 200)
+                      }}
+                      placeholder="Primary diagnosis"
+                    />
+                    {showDiagnosisSuggestions && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                        {diagnosisSuggestions.map((diagnosis, index) => (
+                          <button
+                            key={index}
+                            type="button"
+                            className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                            onClick={() => {
+                              setPatientForm({ ...patientForm, diagnosis })
+                              setShowDiagnosisSuggestions(false)
+                            }}
+                          >
+                            {diagnosis}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
                 <div className="col-span-2">
                   <Label>Emergency Contact Name</Label>
                   <Input
                     value={patientForm.emergency_contact_name}
                     onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_name: e.target.value })}
+                    placeholder="e.g., John Doe"
                   />
                 </div>
                 <div>
@@ -956,15 +1319,25 @@ function CaregiverDashboard() {
                   <Input
                     value={patientForm.emergency_contact_phone}
                     onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_phone: e.target.value })}
+                    placeholder="e.g., (555) 123-4567"
                   />
                 </div>
                 <div>
                   <Label>Relationship</Label>
-                  <Input
+                  <select
                     value={patientForm.emergency_contact_relationship}
                     onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_relationship: e.target.value })}
-                    placeholder="e.g., Spouse, Child"
-                  />
+                    className="w-full px-3 py-2 border rounded-lg"
+                  >
+                    <option value="">Select relationship</option>
+                    <option value="Spouse">Spouse</option>
+                    <option value="Child">Child</option>
+                    <option value="Parent">Parent</option>
+                    <option value="Sibling">Sibling</option>
+                    <option value="Friend">Friend</option>
+                    <option value="Caregiver">Caregiver</option>
+                    <option value="Other">Other</option>
+                  </select>
                 </div>
                 <div className="col-span-2">
                   <Label>Allergies</Label>
@@ -1012,11 +1385,59 @@ function CaregiverDashboard() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Medication Name *</Label>
-                <Input
-                  value={medicationForm.name}
-                  onChange={(e) => setMedicationForm({ ...medicationForm, name: e.target.value })}
-                  placeholder="e.g., Aspirin"
-                />
+                <div className="relative">
+                  <Input
+                    value={medicationForm.name}
+                    onChange={(e) => {
+                      const value = e.target.value
+                      setMedicationForm({ ...medicationForm, name: value })
+                      
+                      // Filter suggestions
+                      if (value.length > 0) {
+                        const filtered = commonMedications.filter(m => 
+                          m.toLowerCase().includes(value.toLowerCase())
+                        )
+                        setMedicationSuggestions(filtered)
+                        setShowMedicationSuggestions(filtered.length > 0)
+                      } else {
+                        setShowMedicationSuggestions(false)
+                      }
+                    }}
+                    onFocus={() => {
+                      if (medicationForm.name.length > 0) {
+                        const filtered = commonMedications.filter(m => 
+                          m.toLowerCase().includes(medicationForm.name.toLowerCase())
+                        )
+                        if (filtered.length > 0) {
+                          setMedicationSuggestions(filtered)
+                          setShowMedicationSuggestions(true)
+                        }
+                      }
+                    }}
+                    onBlur={() => {
+                      // Delay to allow click on suggestion
+                      setTimeout(() => setShowMedicationSuggestions(false), 200)
+                    }}
+                    placeholder="e.g., Aspirin"
+                  />
+                  {showMedicationSuggestions && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
+                      {medicationSuggestions.map((medication, index) => (
+                        <button
+                          key={index}
+                          type="button"
+                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                          onClick={() => {
+                            setMedicationForm({ ...medicationForm, name: medication })
+                            setShowMedicationSuggestions(false)
+                          }}
+                        >
+                          {medication}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
               <div>
                 <Label>Details (dosage, frequency, instructions)</Label>
@@ -1229,6 +1650,80 @@ function CaregiverDashboard() {
           medications={medications}
           onClose={() => setShowEmergencySummary(false)}
         />
+      )}
+
+      {/* Profile Modal */}
+      {showProfileModal && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-md">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Profile</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowProfileModal(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center gap-4 pb-4 border-b">
+                <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+                  <UserCircle className="w-10 h-10 text-primary" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{userProfile?.full_name || 'User'}</h3>
+                  <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground">Role</p>
+                  <p className="text-base capitalize">
+                    {userRole === 'caregiver' ? 'Caregiver' : 'Patient (Read-Only)'}
+                  </p>
+                </div>
+
+                {userProfile?.phone && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Phone</p>
+                    <p className="text-base">{userProfile.phone}</p>
+                  </div>
+                )}
+
+                {userRole === 'caregiver' && patients.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Managing Patients</p>
+                    <p className="text-base">{patients.length} patient{patients.length !== 1 ? 's' : ''}</p>
+                  </div>
+                )}
+
+                {userRole === 'patient' && selectedPatient && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Care Information</p>
+                    <div className="mt-2 p-3 bg-gray-50 rounded-lg">
+                      <p className="text-sm">You are receiving care through CareVault</p>
+                      {selectedPatient.diagnosis && (
+                        <p className="text-sm mt-1">
+                          <span className="font-medium">Diagnosis:</span> {selectedPatient.diagnosis}
+                        </p>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="pt-4 border-t">
+                <Button
+                  variant="outline"
+                  className="w-full"
+                  onClick={() => setShowProfileModal(false)}
+                >
+                  Close
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   )

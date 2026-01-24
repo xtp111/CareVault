@@ -2,7 +2,7 @@
 
 **Secure Medical Information Management for Chronic Care**
 
-CareVault is a full-stack healthcare application designed to help **caregivers and patients** securely manage medical records, medications, appointments, and emergency information—all in one place.
+CareVault is a full-stack healthcare application designed to help **caregivers and patients** securely manage medical records, medications, appointments, and emergency information - all in one place.
 
 > ⚡ Built for real-world caregiving scenarios with role-based access control, strong data isolation, and a scalable cloud architecture.
 
@@ -75,22 +75,27 @@ caregiver_app_project/
 └── package.json            # Project dependencies
 ```
 
-## Quick Start
+## ⚡ Quick Start
 
-### Requirements
+Get CareVault up and running in minutes.
 
-- Node.js 18+
-- npm or yarn
-- Supabase account
+---
 
-### Installation Steps
+### 📋 Requirements
 
-1. **Clone the repository**
+- **Node.js** 18+
+- **npm** or **yarn**
+- **Supabase** account
 
+---
+
+### 🛠 Installation Steps
+
+#### 1️⃣ Clone the repository
 ```bash
 git clone <repository-url>
 cd caregiver_app_project
-```
+
 
 2. **Install dependencies**
 

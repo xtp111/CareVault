@@ -95,7 +95,7 @@ Get CareVault up and running in minutes.
 ```bash
 git clone <repository-url>
 cd caregiver_app_project
-
+```
 
 2. **Install dependencies**
 

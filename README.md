@@ -1,30 +1,45 @@
-# CareVault
+# 🏥 CareVault
 
-A medical information management system designed for patients with chronic conditions and their caregivers.
+**Secure Medical Information Management for Chronic Care**
 
-## Project Overview
+CareVault is a full-stack healthcare application designed to help **caregivers and patients** securely manage medical records, medications, appointments, and emergency information—all in one place.
 
-CareVault is a full-stack medical document management application built with Next.js and Supabase. It helps caregivers efficiently manage care recipients' medical information, medication records, appointment reminders, and important documents.
+> ⚡ Built for real-world caregiving scenarios with role-based access control, strong data isolation, and a scalable cloud architecture.
 
-### Core Features
+---
 
-- **Multi-User Management**: Support for both Caregiver and Patient roles
-- **Care Recipient Management**: One caregiver can manage multiple care recipients
-- **Medication Records**: Record and track medication information, dosages, and usage instructions
-- **Appointment Reminders**: Manage medical appointments with recurring reminders
-- **Document Storage**: Upload and manage important medical, legal, and financial documents
-- **Emergency Summary**: Quickly generate emergency summaries with key medical information
-- **Data Isolation**: Strict data permission control based on Row Level Security (RLS)
+## 🚀 Why CareVault?
 
-## Technology Stack
+Managing healthcare information across multiple patients can be complex and error-prone.  
+**CareVault simplifies caregiving** by centralizing critical medical data while ensuring **privacy, security, and ease of access**.
 
-- **Frontend Framework**: Next.js 14 (App Router)
-- **Programming Language**: TypeScript
-- **Styling**: Tailwind CSS + shadcn/ui
-- **Database**: Supabase (PostgreSQL)
-- **Authentication**: Supabase Authentication
-- **Storage**: Supabase Storage
-- **Deployment**: Vercel
+---
+
+## ✨ Key Features
+
+- 🧑‍⚕️ **Multi-User Roles** – Caregiver and Patient access levels
+- 👨‍👩‍👧 **Care Recipient Management** – One caregiver can manage multiple patients
+- 💊 **Medication Records** – Dosage, instructions, and history tracking
+- 📅 **Appointment Reminders** – Recurring medical appointments
+- 📁 **Secure Document Storage** – Medical, legal, and financial documents
+- 🚨 **Emergency Summary** – One-click emergency medical overview
+- 🔒 **Data Isolation** – Row Level Security (RLS) for strict access control
+
+---
+
+## 🧠 Technology Stack
+
+| Layer | Technology |
+|------|-----------|
+| Frontend | Next.js 14 (App Router) |
+| Language | TypeScript |
+| UI / Styling | Tailwind CSS + shadcn/ui |
+| Backend / DB | Supabase (PostgreSQL) |
+| Authentication | Supabase Auth |
+| Storage | Supabase Storage |
+| Deployment | Vercel |
+
+---
 
 ## Project Structure
 

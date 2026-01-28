@@ -1,33 +1,33 @@
-# 🏥 CareVault
+#  CareVault
 
 **Secure Medical Information Management for Chronic Care**
 
 CareVault is a full-stack healthcare application designed to help **caregivers and patients** securely manage medical records, medications, appointments, and emergency information - all in one place.
 
-> ⚡ Built for real-world caregiving scenarios with role-based access control, strong data isolation, and a scalable cloud architecture.
+>  Built for real-world caregiving scenarios with role-based access control, strong data isolation, and a scalable cloud architecture.
 
 ---
 
-## 🚀 Why CareVault?
+##  Why CareVault?
 
 Managing healthcare information across multiple patients can be complex and error-prone.  
 **CareVault simplifies caregiving** by centralizing critical medical data while ensuring **privacy, security, and ease of access**.
 
 ---
 
-## ✨ Key Features
+##  Key Features
 
-- 🧑‍⚕️ **Multi-User Roles** – Caregiver and Patient access levels
-- 👨‍👩‍👧 **Care Recipient Management** – One caregiver can manage multiple patients
-- 💊 **Medication Records** – Dosage, instructions, and history tracking
-- 📅 **Appointment Reminders** – Recurring medical appointments
-- 📁 **Secure Document Storage** – Medical, legal, and financial documents
-- 🚨 **Emergency Summary** – One-click emergency medical overview
-- 🔒 **Data Isolation** – Row Level Security (RLS) for strict access control
+-  **Multi-User Roles** – Caregiver and Patient access levels
+-  **Care Recipient Management** – One caregiver can manage multiple patients
+-  **Medication Records** – Dosage, instructions, and history tracking
+-  **Appointment Reminders** – Recurring medical appointments
+-  **Secure Document Storage** – Medical, legal, and financial documents
+-  **Emergency Summary** – One-click emergency medical overview
+-  **Data Isolation** – Row Level Security (RLS) for strict access control
 
 ---
 
-## 🧠 Technology Stack
+##  Technology Stack
 
 | Layer | Technology |
 |------|-----------|
@@ -75,13 +75,13 @@ caregiver_app_project/
 └── package.json            # Project dependencies
 ```
 
-## ⚡ Quick Start
+##  Quick Start
 
 Get CareVault up and running in minutes.
 
 ---
 
-### 📋 Requirements
+###  Requirements
 
 - **Node.js** 18+
 - **npm** or **yarn**
@@ -91,7 +91,7 @@ Get CareVault up and running in minutes.
 
 ### 🛠 Installation Steps
 
-#### 1️⃣ Clone the repository
+#### Clone the repository
 ```bash
 git clone <repository-url>
 cd caregiver_app_project

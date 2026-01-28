@@ -41,7 +41,7 @@ Managing healthcare information across multiple patients can be complex and erro
 
 ---
 
-## 🗂 Project Structure
+##  Project Structure
 
 ```
 caregiver_app_project/

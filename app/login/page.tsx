@@ -219,7 +219,7 @@ export default function LoginPage() {
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
                         <p className="text-sm font-semibold text-blue-900">Link to Your Caregiver</p>
                         <p className="text-xs text-blue-700">
-                          To access your care information, please provide your caregiver's details. They must already have a CareVault account.
+                          To access your care information, please provide your caregiver&apos;s details. They must already have a CareVault account.
                         </p>
                         
                         <div className="space-y-2">

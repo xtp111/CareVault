@@ -1,54 +1,54 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import Image from 'next/image'
-import type { UserRole } from '@/lib/permissions'
+import { useState } from 'react';
+import { supabase, isSupabaseConfigured } from '@/lib/supabase';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import Image from 'next/image';
+import type { UserRole } from '@/lib/permissions';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
-  const [isSignUp, setIsSignUp] = useState(false)
-  const [selectedRole, setSelectedRole] = useState<UserRole>('caregiver')
-  const [error, setError] = useState('')
-  const [loading, setLoading] = useState(false)
-  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [isSignUp, setIsSignUp] = useState(false);
+  const [selectedRole, setSelectedRole] = useState<UserRole>('caregiver');
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+
   // Registration form
-  const [fullName, setFullName] = useState('')
-  const [phone, setPhone] = useState('')
-  const [caregiverEmail, setCaregiverEmail] = useState('')
-  const [caregiverName, setCaregiverName] = useState('')
+  const [fullName, setFullName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [caregiverEmail, setCaregiverEmail] = useState('');
+  const [caregiverName, setCaregiverName] = useState('');
 
   const handleEmailAuth = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setError('')
-    setLoading(true)
+    e.preventDefault();
+    setError('');
+    setLoading(true);
 
     if (!isSupabaseConfigured || !supabase) {
-      setError('Supabase is not configured. Please add Supabase credentials to .env.local')
-      setLoading(false)
-      return
+      setError('Supabase is not configured. Please add Supabase credentials to .env.local');
+      setLoading(false);
+      return;
     }
 
     try {
       if (isSignUp) {
         // Validate registration info
         if (!fullName.trim()) {
-          throw new Error('Please enter your full name')
+          throw new Error('Please enter your full name');
         }
 
         // Validate patient-specific fields
         if (selectedRole === 'patient') {
           if (!caregiverEmail.trim()) {
-            throw new Error('Please enter your caregiver\'s email')
+            throw new Error("Please enter your caregiver's email");
           }
           if (!caregiverName.trim()) {
-            throw new Error('Please enter your caregiver\'s name')
+            throw new Error("Please enter your caregiver's name");
           }
         }
-        
+
         // Sign up new user
         const { data: authData, error: signUpError } = await supabase.auth.signUp({
           email,
@@ -61,35 +61,35 @@ export default function LoginPage() {
               role: selectedRole,
               pending_caregiver_email: selectedRole === 'patient' ? caregiverEmail : null,
               pending_caregiver_name: selectedRole === 'patient' ? caregiverName : null,
-            }
-          }
-        })
+            },
+          },
+        });
 
-        if (signUpError) throw signUpError
+        if (signUpError) throw signUpError;
 
         if (authData.user && authData.session) {
           // Redirect immediately after successful profile creation
-          window.location.href = '/'
-          return
+          window.location.href = '/';
+          return;
         }
       } else {
         // Sign in existing user
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
-        })
+        });
 
-        if (signInError) throw signInError
+        if (signInError) throw signInError;
       }
 
       // Redirect to main app after successful login
-      window.location.href = '/'
+      window.location.href = '/';
     } catch (err: any) {
-      setError(err.message || 'Authentication failed')
+      setError(err.message || 'Authentication failed');
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#FFF8F0] via-[#FFF5E6] to-[#FFE8CC] flex items-center justify-center p-4">
@@ -115,9 +115,7 @@ export default function LoginPage() {
         {/* Login Form */}
         <Card className="w-full shadow-2xl border-0 bg-white/90 backdrop-blur">
           <CardHeader className="space-y-2">
-            <CardTitle className="text-3xl font-bold text-center">
-              Login to CareVault
-            </CardTitle>
+            <CardTitle className="text-3xl font-bold text-center">Login to CareVault</CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
             <form onSubmit={handleEmailAuth} className="space-y-4">
@@ -154,9 +152,7 @@ export default function LoginPage() {
               {isSignUp && (
                 <>
                   <div className="space-y-2">
-                    <label className="text-sm font-medium text-gray-700">
-                      I am a:
-                    </label>
+                    <label className="text-sm font-medium text-gray-700">I am a:</label>
                     <div className="flex gap-4">
                       <label className="flex items-center gap-2 cursor-pointer">
                         <input
@@ -217,13 +213,19 @@ export default function LoginPage() {
                   {selectedRole === 'patient' && (
                     <>
                       <div className="bg-blue-50 p-4 rounded-lg border border-blue-200 space-y-3">
-                        <p className="text-sm font-semibold text-blue-900">Link to Your Caregiver</p>
-                        <p className="text-xs text-blue-700">
-                          To access your care information, please provide your caregiver&apos;s details. They must already have a CareVault account.
+                        <p className="text-sm font-semibold text-blue-900">
+                          Link to Your Caregiver
                         </p>
-                        
+                        <p className="text-xs text-blue-700">
+                          To access your care information, please provide your caregiver&apos;s
+                          details. They must already have a CareVault account.
+                        </p>
+
                         <div className="space-y-2">
-                          <label htmlFor="caregiverEmail" className="text-sm font-medium text-gray-700">
+                          <label
+                            htmlFor="caregiverEmail"
+                            className="text-sm font-medium text-gray-700"
+                          >
                             Caregiver Email <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -238,7 +240,10 @@ export default function LoginPage() {
                         </div>
 
                         <div className="space-y-2">
-                          <label htmlFor="caregiverName" className="text-sm font-medium text-gray-700">
+                          <label
+                            htmlFor="caregiverName"
+                            className="text-sm font-medium text-gray-700"
+                          >
                             Caregiver Name <span className="text-red-500">*</span>
                           </label>
                           <input
@@ -253,7 +258,8 @@ export default function LoginPage() {
                         </div>
 
                         <p className="text-xs text-gray-600 italic">
-                          Note: Your caregiver must register their account first before you can link to them.
+                          Note: Your caregiver must register their account first before you can link
+                          to them.
                         </p>
                       </div>
                     </>
@@ -262,9 +268,7 @@ export default function LoginPage() {
               )}
 
               {error && (
-                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
-                  {error}
-                </div>
+                <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">{error}</div>
               )}
 
               <Button
@@ -279,12 +283,12 @@ export default function LoginPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    setIsSignUp(!isSignUp)
-                    setError('')
-                    setFullName('')
-                    setPhone('')
-                    setCaregiverEmail('')
-                    setCaregiverName('')
+                    setIsSignUp(!isSignUp);
+                    setError('');
+                    setFullName('');
+                    setPhone('');
+                    setCaregiverEmail('');
+                    setCaregiverName('');
                   }}
                   className="text-sm text-[#FF6B35] hover:text-[#FF5722] font-medium transition"
                 >
@@ -298,5 +302,5 @@ export default function LoginPage() {
         </Card>
       </div>
     </div>
-  )
+  );
 }

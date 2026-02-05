@@ -19,6 +19,7 @@ CareVault employs a client-server architecture with the following primary compon
 ```
 
 The system is composed of:
+
 - **Frontend Layer**: Next.js application with React components
 - **Backend Layer**: Supabase platform (authentication, database, storage)
 - **Data Layer**: PostgreSQL database with Row Level Security (RLS)
@@ -27,6 +28,7 @@ The system is composed of:
 ### 2.2 Architecture Style
 
 The system follows a microservices-oriented architecture pattern with the following characteristics:
+
 - Monolithic frontend with modular components
 - Serverless backend services via Supabase
 - Centralized authentication and authorization
@@ -36,35 +38,35 @@ The system follows a microservices-oriented architecture pattern with the follow
 
 ### 3.1 Frontend Technologies
 
-| Component | Technology | Version | Purpose |
-|-----------|------------|---------|---------|
-| Framework | Next.js | 14.x | React framework with App Router |
-| Language | TypeScript | 5.x | Type-safe JavaScript |
-| UI Library | React | 18.x | Component-based UI |
-| Styling | Tailwind CSS | 3.x | Utility-first CSS framework |
-| Icons | Lucide React | Latest | UI icons |
-| Components | Radix UI Primitives | Latest | Accessible UI primitives |
-| PDF Generation | jsPDF | Latest | PDF export functionality |
-| Canvas | html2canvas | Latest | Screenshot functionality |
+| Component      | Technology          | Version | Purpose                         |
+| -------------- | ------------------- | ------- | ------------------------------- |
+| Framework      | Next.js             | 14.x    | React framework with App Router |
+| Language       | TypeScript          | 5.x     | Type-safe JavaScript            |
+| UI Library     | React               | 18.x    | Component-based UI              |
+| Styling        | Tailwind CSS        | 3.x     | Utility-first CSS framework     |
+| Icons          | Lucide React        | Latest  | UI icons                        |
+| Components     | Radix UI Primitives | Latest  | Accessible UI primitives        |
+| PDF Generation | jsPDF               | Latest  | PDF export functionality        |
+| Canvas         | html2canvas         | Latest  | Screenshot functionality        |
 
 ### 3.2 Backend Technologies
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Backend Platform | Supabase | Backend-as-a-Service |
-| Database | PostgreSQL | Relational database |
-| Authentication | Supabase Auth | User authentication and management |
-| Storage | Supabase Storage | File storage and management |
-| Real-time | Supabase Realtime | Real-time data synchronization |
-| Functions | Supabase Functions | Serverless functions (future use) |
+| Component        | Technology         | Purpose                            |
+| ---------------- | ------------------ | ---------------------------------- |
+| Backend Platform | Supabase           | Backend-as-a-Service               |
+| Database         | PostgreSQL         | Relational database                |
+| Authentication   | Supabase Auth      | User authentication and management |
+| Storage          | Supabase Storage   | File storage and management        |
+| Real-time        | Supabase Realtime  | Real-time data synchronization     |
+| Functions        | Supabase Functions | Serverless functions (future use)  |
 
 ### 3.3 Infrastructure
 
-| Component | Technology | Purpose |
-|-----------|------------|---------|
-| Hosting | Vercel | Frontend hosting and deployment |
-| Database Host | Supabase | Database hosting and management |
-| File Storage | Supabase Storage | File storage hosting |
+| Component     | Technology       | Purpose                         |
+| ------------- | ---------------- | ------------------------------- |
+| Hosting       | Vercel           | Frontend hosting and deployment |
+| Database Host | Supabase         | Database hosting and management |
+| File Storage  | Supabase Storage | File storage hosting            |
 
 ## 4. Component Architecture
 
@@ -115,6 +117,7 @@ types/
 ### 4.2 Backend Architecture
 
 The backend consists of Supabase services:
+
 - **Authentication Service**: Manages user authentication and session management
 - **Database Service**: PostgreSQL database with RLS policies
 - **Storage Service**: File storage with access controls
@@ -161,10 +164,10 @@ Users (Supabase Auth + Custom Table)
 
 The system implements a role-based permission model:
 
-| Role | Permissions |
-|------|-------------|
+| Role      | Permissions                                     |
+| --------- | ----------------------------------------------- |
 | Caregiver | Full CRUD operations on managed care recipients |
-| Patient | Read-only access to own data |
+| Patient   | Read-only access to own data                    |
 
 ## 6. Data Flow Architecture
 
@@ -211,6 +214,7 @@ The system implements a role-based permission model:
 ### 7.2 Indexing Strategy
 
 Database tables are indexed for optimal query performance:
+
 - Primary keys are indexed by default
 - Foreign key relationships are indexed
 - Frequently queried columns are indexed
@@ -243,6 +247,7 @@ Source Control (GitHub)
 ### 8.2 Environment Configuration
 
 The application supports multiple environments:
+
 - **Development**: Local development with hot reloading
 - **Preview**: Branch deployments for testing
 - **Production**: Live application with optimized settings
@@ -264,6 +269,7 @@ The application supports multiple environments:
 ### 9.2 API Contracts
 
 The application uses Supabase's client library for all database interactions:
+
 - Typed queries using TypeScript interfaces
 - Automatic type inference from database schema
 - Consistent API patterns across all operations

@@ -1,85 +1,103 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { User, Users, Heart, Shield, Trash2, Search, X, Calendar, Mail, Phone, ArrowLeft, LogOut, UserCircle } from 'lucide-react'
-import { ProtectedRoute, useAuth } from '@/contexts/AuthContext'
-import { usePermissions } from '@/hooks/usePermissions'
-import { supabase } from '@/lib/supabase'
-import { careRecipientService } from '@/lib/supabase-service'
-import type { CareRecipient } from '@/types/supabase'
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import {
+  User,
+  Users,
+  Heart,
+  Shield,
+  Trash2,
+  Search,
+  X,
+  Calendar,
+  Mail,
+  Phone,
+  ArrowLeft,
+  LogOut,
+  UserCircle,
+} from 'lucide-react';
+import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/lib/supabase';
+import { careRecipientService } from '@/lib/supabase-service';
+import type { CareRecipient } from '@/types/supabase';
 
 function PatientsListPage() {
-  const { user, userRole } = useAuth()
-  const permissions = usePermissions()
-  const router = useRouter()
-  
-  const [patients, setPatients] = useState<CareRecipient[]>([])
-  const [loading, setLoading] = useState(true)
-  const [searchQuery, setSearchQuery] = useState('')
-  const [filterDiagnosis, setFilterDiagnosis] = useState<string>('')
+  const { user, userRole } = useAuth();
+  const permissions = usePermissions();
+  const router = useRouter();
+
+  const [patients, setPatients] = useState<CareRecipient[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDiagnosis, setFilterDiagnosis] = useState<string>('');
 
   useEffect(() => {
     if (!user || !permissions.isCaregiver) {
-      router.push('/dashboard')
-      return
+      router.push('/dashboard');
+      return;
     }
 
     const loadPatients = async () => {
-      const careRecipients = await careRecipientService.getCareRecipientsByCaregiver(user.id)
-      setPatients(careRecipients)
-      setLoading(false)
-    }
+      const careRecipients = await careRecipientService.getCareRecipientsByCaregiver(user.id);
+      setPatients(careRecipients);
+      setLoading(false);
+    };
 
-    loadPatients()
-  }, [user, permissions.isCaregiver, router])
+    loadPatients();
+  }, [user, permissions.isCaregiver, router]);
 
-  const filteredPatients = patients.filter(patient => {
-    const matchesSearch = searchQuery === '' || 
+  const filteredPatients = patients.filter((patient) => {
+    const matchesSearch =
+      searchQuery === '' ||
       patient.first_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       patient.last_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      patient.patient_email?.toLowerCase().includes(searchQuery.toLowerCase())
-    
-    const matchesDiagnosis = filterDiagnosis === '' || 
-      patient.diagnosis?.toLowerCase().includes(filterDiagnosis.toLowerCase())
-    
-    return matchesSearch && matchesDiagnosis
-  })
+      patient.patient_email?.toLowerCase().includes(searchQuery.toLowerCase());
 
-  const uniqueDiagnoses = Array.from(new Set(patients.map(p => p.diagnosis).filter(Boolean))) as string[]
+    const matchesDiagnosis =
+      filterDiagnosis === '' ||
+      patient.diagnosis?.toLowerCase().includes(filterDiagnosis.toLowerCase());
+
+    return matchesSearch && matchesDiagnosis;
+  });
+
+  const uniqueDiagnoses = Array.from(
+    new Set(patients.map((p) => p.diagnosis).filter(Boolean))
+  ) as string[];
 
   const clearFilters = () => {
-    setSearchQuery('')
-    setFilterDiagnosis('')
-  }
+    setSearchQuery('');
+    setFilterDiagnosis('');
+  };
 
   const handleViewPatient = (patientId: string) => {
-    router.push(`/dashboard?patient=${patientId}`)
-  }
+    router.push(`/dashboard?patient=${patientId}`);
+  };
 
   const handleDeletePatient = async (id: string, name: string) => {
     if (!confirm(`Are you sure you want to delete ${name}? All associated data will be removed.`)) {
-      return
+      return;
     }
 
     try {
-      await careRecipientService.deleteCareRecipient(id)
-      setPatients(patients.filter(p => p.id !== id))
+      await careRecipientService.deleteCareRecipient(id);
+      setPatients(patients.filter((p) => p.id !== id));
     } catch (error) {
-      console.error('Error deleting patient:', error)
-      alert('Failed to delete patient')
+      console.error('Error deleting patient:', error);
+      alert('Failed to delete patient');
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <p>Loading patients...</p>
       </div>
-    )
+    );
   }
 
   return (
@@ -99,23 +117,19 @@ function PatientsListPage() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
-              <Button
-                variant="outline"
-                onClick={() => router.push('/dashboard')}
-                className="gap-2"
-              >
+              <Button variant="outline" onClick={() => router.push('/dashboard')} className="gap-2">
                 <ArrowLeft className="w-4 h-4" />
                 Dashboard
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="icon"
                 onClick={async () => {
-                  await supabase?.auth.signOut()
-                  router.push('/login')
+                  await supabase?.auth.signOut();
+                  router.push('/login');
                 }}
                 title="Logout"
               >
@@ -148,7 +162,7 @@ function PatientsListPage() {
                   </button>
                 )}
               </div>
-              
+
               <div className="flex gap-2">
                 <select
                   value={filterDiagnosis}
@@ -156,11 +170,13 @@ function PatientsListPage() {
                   className="flex-1 px-3 py-2 border rounded-lg"
                 >
                   <option value="">All Diagnoses</option>
-                  {uniqueDiagnoses.map(diagnosis => (
-                    <option key={diagnosis} value={diagnosis}>{diagnosis}</option>
+                  {uniqueDiagnoses.map((diagnosis) => (
+                    <option key={diagnosis} value={diagnosis}>
+                      {diagnosis}
+                    </option>
                   ))}
                 </select>
-                
+
                 {(searchQuery || filterDiagnosis) && (
                   <Button variant="outline" size="icon" onClick={clearFilters}>
                     <X className="w-4 h-4" />
@@ -168,7 +184,7 @@ function PatientsListPage() {
                 )}
               </div>
             </div>
-            
+
             {(searchQuery || filterDiagnosis) && (
               <div className="mt-4 text-sm text-muted-foreground">
                 Showing {filteredPatients.length} of {patients.length} patients
@@ -188,7 +204,7 @@ function PatientsListPage() {
                 {patients.length === 0 ? 'No Patients Yet' : 'No Matching Patients'}
               </h2>
               <p className="text-muted-foreground mb-4">
-                {patients.length === 0 
+                {patients.length === 0
                   ? 'Add your first patient to get started'
                   : 'Try adjusting your search or filters'}
               </p>
@@ -201,7 +217,7 @@ function PatientsListPage() {
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredPatients.map(patient => (
+            {filteredPatients.map((patient) => (
               <Card key={patient.id} className="hover:shadow-lg transition-shadow">
                 <CardHeader>
                   <div className="flex items-start justify-between">
@@ -228,14 +244,14 @@ function PatientsListPage() {
                       </span>
                     </div>
                   )}
-                  
+
                   {patient.patient_email && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Mail className="w-4 h-4" />
                       <span className="truncate">{patient.patient_email}</span>
                     </div>
                   )}
-                  
+
                   {patient.emergency_contact_phone && (
                     <div className="flex items-center gap-2 text-sm text-muted-foreground">
                       <Phone className="w-4 h-4" />
@@ -245,18 +261,20 @@ function PatientsListPage() {
                       )}
                     </div>
                   )}
-                  
+
                   <div className="flex gap-2 pt-2">
-                    <Button
-                      className="flex-1"
-                      onClick={() => handleViewPatient(patient.id)}
-                    >
+                    <Button className="flex-1" onClick={() => handleViewPatient(patient.id)}>
                       View Details
                     </Button>
                     <Button
                       variant="outline"
                       size="icon"
-                      onClick={() => handleDeletePatient(patient.id, `${patient.first_name} ${patient.last_name}`)}
+                      onClick={() =>
+                        handleDeletePatient(
+                          patient.id,
+                          `${patient.first_name} ${patient.last_name}`
+                        )
+                      }
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </Button>
@@ -268,7 +286,7 @@ function PatientsListPage() {
         )}
       </main>
     </div>
-  )
+  );
 }
 
 export default function ProtectedPatientsPage() {
@@ -276,5 +294,5 @@ export default function ProtectedPatientsPage() {
     <ProtectedRoute>
       <PatientsListPage />
     </ProtectedRoute>
-  )
+  );
 }

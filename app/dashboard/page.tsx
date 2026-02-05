@@ -1,60 +1,78 @@
-'use client'
+'use client';
 
-import { useState, useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit, Shield, LogOut, UserCircle } from 'lucide-react'
-import { ProtectedRoute, useAuth } from '@/contexts/AuthContext'
-import { usePermissions } from '@/hooks/usePermissions'
-import { supabase } from '@/lib/supabase'
-import EmergencySummary from '@/components/EmergencySummary'
-import { 
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  FileText,
+  Heart,
+  Pill,
+  User,
+  Users,
+  AlertCircle,
+  FileCheck,
+  Calendar,
+  X,
+  Trash2,
+  Upload,
+  Download,
+  ExternalLink,
+  Edit,
+  Shield,
+  LogOut,
+  UserCircle,
+} from 'lucide-react';
+import { ProtectedRoute, useAuth } from '@/contexts/AuthContext';
+import { usePermissions } from '@/hooks/usePermissions';
+import { supabase } from '@/lib/supabase';
+import EmergencySummary from '@/components/EmergencySummary';
+import {
   careRecipientService,
   medicalRecordService,
-  appointmentService, 
+  appointmentService,
   documentService,
-  emergencyContactService
-} from '@/lib/supabase-service'
-import type { 
+  emergencyContactService,
+} from '@/lib/supabase-service';
+import type {
   CareRecipient,
   MedicalRecord,
-  Appointment, 
+  Appointment,
   DocumentRecord,
-  AppointmentStatus
-} from '@/types/supabase'
+  AppointmentStatus,
+} from '@/types/supabase';
 
-type DocumentCategory = 'legal' | 'medical' | 'financial' | 'identification'
+type DocumentCategory = 'legal' | 'medical' | 'financial' | 'identification';
 
 function CaregiverDashboard() {
-  const { user, userRole, userProfile } = useAuth()
-  const permissions = usePermissions()
-  const router = useRouter()
-  
-  const [patients, setPatients] = useState<CareRecipient[]>([])
-  const [selectedPatient, setSelectedPatient] = useState<CareRecipient | null>(null)
-  const [medications, setMedications] = useState<MedicalRecord[]>([])
-  const [careLogs, setCareLogs] = useState<MedicalRecord[]>([])
-  const [appointments, setAppointments] = useState<Appointment[]>([])
-  const [documents, setDocuments] = useState<DocumentRecord[]>([])
-  
-  const [showPatientForm, setShowPatientForm] = useState(false)
-  const [showMedicationForm, setShowMedicationForm] = useState(false)
-  const [showCareLogForm, setShowCareLogForm] = useState(false)
-  const [showAppointmentForm, setShowAppointmentForm] = useState(false)
-  const [showDocumentForm, setShowDocumentForm] = useState(false)
-  const [showEmergencySummary, setShowEmergencySummary] = useState(false)
-  const [showProfileModal, setShowProfileModal] = useState(false)
-  
+  const { user, userRole, userProfile } = useAuth();
+  const permissions = usePermissions();
+  const router = useRouter();
+
+  const [patients, setPatients] = useState<CareRecipient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<CareRecipient | null>(null);
+  const [medications, setMedications] = useState<MedicalRecord[]>([]);
+  const [careLogs, setCareLogs] = useState<MedicalRecord[]>([]);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [documents, setDocuments] = useState<DocumentRecord[]>([]);
+
+  const [showPatientForm, setShowPatientForm] = useState(false);
+  const [showMedicationForm, setShowMedicationForm] = useState(false);
+  const [showCareLogForm, setShowCareLogForm] = useState(false);
+  const [showAppointmentForm, setShowAppointmentForm] = useState(false);
+  const [showDocumentForm, setShowDocumentForm] = useState(false);
+  const [showEmergencySummary, setShowEmergencySummary] = useState(false);
+  const [showProfileModal, setShowProfileModal] = useState(false);
+
   // Search and filter states
-  const [medicationSearch, setMedicationSearch] = useState('')
-  const [appointmentSearch, setAppointmentSearch] = useState('')
-  
-  const [uploadingFile, setUploadingFile] = useState(false)
-  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [medicationSearch, setMedicationSearch] = useState('');
+  const [appointmentSearch, setAppointmentSearch] = useState('');
+
+  const [uploadingFile, setUploadingFile] = useState(false);
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
 
   const [patientForm, setPatientForm] = useState({
     patient_email: '',
@@ -66,32 +84,32 @@ function CaregiverDashboard() {
     allergies: '',
     emergency_contact_name: '',
     emergency_contact_phone: '',
-    emergency_contact_relationship: ''
-  })
-  
+    emergency_contact_relationship: '',
+  });
+
   // Common diagnosis suggestions
   const commonDiagnoses = [
-    'Alzheimer\'s Disease',
+    "Alzheimer's Disease",
     'Dementia',
-    'Parkinson\'s Disease',
+    "Parkinson's Disease",
     'Diabetes Type 2',
     'Hypertension',
     'Heart Failure',
     'COPD',
     'Arthritis',
     'Osteoporosis',
-    'Depression'
-  ]
-  
-  const [diagnosisSuggestions, setDiagnosisSuggestions] = useState<string[]>([])
-  const [showDiagnosisSuggestions, setShowDiagnosisSuggestions] = useState(false)
+    'Depression',
+  ];
+
+  const [diagnosisSuggestions, setDiagnosisSuggestions] = useState<string[]>([]);
+  const [showDiagnosisSuggestions, setShowDiagnosisSuggestions] = useState(false);
 
   const [medicationForm, setMedicationForm] = useState({
     name: '',
     details: '',
-    date: new Date().toISOString().split('T')[0]
-  })
-  
+    date: new Date().toISOString().split('T')[0],
+  });
+
   // Common medications
   const commonMedications = [
     'Aspirin',
@@ -106,82 +124,84 @@ function CaregiverDashboard() {
     'Hydrochlorothiazide',
     'Sertraline',
     'Simvastatin',
-    'Donepezil'
-  ]
-  
-  const [medicationSuggestions, setMedicationSuggestions] = useState<string[]>([])
-  const [showMedicationSuggestions, setShowMedicationSuggestions] = useState(false)
+    'Donepezil',
+  ];
+
+  const [medicationSuggestions, setMedicationSuggestions] = useState<string[]>([]);
+  const [showMedicationSuggestions, setShowMedicationSuggestions] = useState(false);
 
   const [careLogForm, setCareLogForm] = useState({
     name: '',
     details: '',
-    date: new Date().toISOString().split('T')[0]
-  })
+    date: new Date().toISOString().split('T')[0],
+  });
 
   const [appointmentForm, setAppointmentForm] = useState({
     title: '',
     description: '',
-    appointmentDate: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
+    appointmentDate: new Date(new Date().setHours(new Date().getHours() + 1))
+      .toISOString()
+      .slice(0, 16),
     location: '',
     remindBeforeMinutes: 30,
-    repeatInterval: 'none' as 'none' | 'daily' | 'weekly' | 'monthly'
-  })
+    repeatInterval: 'none' as 'none' | 'daily' | 'weekly' | 'monthly',
+  });
 
   const [documentForm, setDocumentForm] = useState({
     name: '',
     category: 'medical' as DocumentCategory,
-    date: new Date().toISOString().split('T')[0]
-  })
+    date: new Date().toISOString().split('T')[0],
+  });
 
   // Load patients on mount
   useEffect(() => {
-    if (!user || !userProfile) return
-    
+    if (!user || !userProfile) return;
+
     const loadPatients = async () => {
       if (permissions.isCaregiver) {
         // Caregiver: Load all care recipients they manage
-        const careRecipients = await careRecipientService.getCareRecipientsByCaregiver(user.id)
-        setPatients(careRecipients)
+        const careRecipients = await careRecipientService.getCareRecipientsByCaregiver(user.id);
+        setPatients(careRecipients);
         if (careRecipients.length > 0) {
-          setSelectedPatient(careRecipients[0])
+          setSelectedPatient(careRecipients[0]);
         }
       } else if (permissions.isPatient && userProfile.email) {
         // Patient: Load their own care recipient record
-        const careRecipient = await careRecipientService.getCareRecipientByEmail(userProfile.email)
+        const careRecipient = await careRecipientService.getCareRecipientByEmail(userProfile.email);
         if (careRecipient) {
-          setPatients([careRecipient])
-          setSelectedPatient(careRecipient)
+          setPatients([careRecipient]);
+          setSelectedPatient(careRecipient);
         }
       }
-    }
-    
-    loadPatients()
-  }, [user, userProfile, permissions.isCaregiver, permissions.isPatient])
+    };
+
+    loadPatients();
+  }, [user, userProfile, permissions.isCaregiver, permissions.isPatient]);
 
   // Load patient data when selected patient changes
   useEffect(() => {
-    if (!selectedPatient) return
+    if (!selectedPatient) return;
 
     const loadPatientData = async () => {
       const [meds, logs, appts, docs] = await Promise.all([
         medicalRecordService.getActiveMedications(selectedPatient.id),
         medicalRecordService.getMedicalRecords(selectedPatient.id),
         appointmentService.getAppointments(selectedPatient.id),
-        documentService.getDocuments(selectedPatient.id)
-      ])
+        documentService.getDocuments(selectedPatient.id),
+      ]);
 
-      setMedications(meds)
-      setCareLogs(logs)
-      setAppointments(appts)
-      setDocuments(docs)
-    }
+      setMedications(meds);
+      setCareLogs(logs);
+      setAppointments(appts);
+      setDocuments(docs);
+    };
 
-    loadPatientData()
-  }, [selectedPatient])
+    loadPatientData();
+  }, [selectedPatient]);
 
   // Patient Management
   const handleAddPatient = async () => {
-    if (!user || !permissions.hasPermission('canEditPatientInfo')) return
+    if (!user || !permissions.hasPermission('canEditPatientInfo')) return;
 
     try {
       const patientId = await careRecipientService.createCareRecipient({
@@ -195,26 +215,27 @@ function CaregiverDashboard() {
         emergency_contact_name: patientForm.emergency_contact_name || undefined,
         emergency_contact_phone: patientForm.emergency_contact_phone || undefined,
         emergency_contact_relationship: patientForm.emergency_contact_relationship || undefined,
-        is_active: true
-      })
+        is_active: true,
+      });
 
-      const newPatient = await careRecipientService.getCareRecipient(patientId)
+      const newPatient = await careRecipientService.getCareRecipient(patientId);
       if (newPatient) {
-        setPatients([...patients, newPatient])
-        setSelectedPatient(newPatient)
+        setPatients([...patients, newPatient]);
+        setSelectedPatient(newPatient);
       }
 
-      setShowPatientForm(false)
-      resetPatientForm()
+      setShowPatientForm(false);
+      resetPatientForm();
     } catch (error: any) {
-      console.error('Error adding patient:', error)
-      const errorMessage = error?.message || error?.error_description || error?.details || 'Failed to add patient'
-      alert(`Failed to add patient: ${errorMessage}`)
+      console.error('Error adding patient:', error);
+      const errorMessage =
+        error?.message || error?.error_description || error?.details || 'Failed to add patient';
+      alert(`Failed to add patient: ${errorMessage}`);
     }
-  }
+  };
 
   const handleUpdatePatient = async () => {
-    if (!selectedPatient || !permissions.hasPermission('canEditPatientInfo')) return
+    if (!selectedPatient || !permissions.hasPermission('canEditPatientInfo')) return;
 
     try {
       await careRecipientService.updateCareRecipient(selectedPatient.id, {
@@ -226,41 +247,45 @@ function CaregiverDashboard() {
         allergies: patientForm.allergies || undefined,
         emergency_contact_name: patientForm.emergency_contact_name || undefined,
         emergency_contact_phone: patientForm.emergency_contact_phone || undefined,
-        emergency_contact_relationship: patientForm.emergency_contact_relationship || undefined
-      })
-      
-      const updatedPatient = { ...selectedPatient, ...patientForm }
-      setSelectedPatient(updatedPatient as CareRecipient)
-      setPatients(patients.map(p => p.id === selectedPatient.id ? updatedPatient as CareRecipient : p))
-      
-      setShowPatientForm(false)
+        emergency_contact_relationship: patientForm.emergency_contact_relationship || undefined,
+      });
+
+      const updatedPatient = { ...selectedPatient, ...patientForm };
+      setSelectedPatient(updatedPatient as CareRecipient);
+      setPatients(
+        patients.map((p) => (p.id === selectedPatient.id ? (updatedPatient as CareRecipient) : p))
+      );
+
+      setShowPatientForm(false);
     } catch (error) {
-      console.error('Error updating patient:', error)
-      alert('Failed to update patient')
+      console.error('Error updating patient:', error);
+      alert('Failed to update patient');
     }
-  }
+  };
 
   const handleDeletePatient = async (id: string) => {
-    if (!permissions.hasPermission('canEditPatientInfo')) return
-    
-    if (!confirm('Are you sure you want to delete this patient? All associated data will be removed.')) {
-      return
+    if (!permissions.hasPermission('canEditPatientInfo')) return;
+
+    if (
+      !confirm('Are you sure you want to delete this patient? All associated data will be removed.')
+    ) {
+      return;
     }
 
     try {
-      await careRecipientService.deleteCareRecipient(id)
-      const remaining = patients.filter(p => p.id !== id)
-      setPatients(remaining)
-      setSelectedPatient(remaining.length > 0 ? remaining[0] : null)
+      await careRecipientService.deleteCareRecipient(id);
+      const remaining = patients.filter((p) => p.id !== id);
+      setPatients(remaining);
+      setSelectedPatient(remaining.length > 0 ? remaining[0] : null);
     } catch (error) {
-      console.error('Error deleting patient:', error)
-      alert('Failed to delete patient')
+      console.error('Error deleting patient:', error);
+      alert('Failed to delete patient');
     }
-  }
+  };
 
   // Medication Management
   const handleAddMedication = async () => {
-    if (!selectedPatient || !permissions.hasPermission('canManageMedications')) return
+    if (!selectedPatient || !permissions.hasPermission('canManageMedications')) return;
 
     try {
       const medId = await medicalRecordService.createMedicalRecord({
@@ -269,8 +294,8 @@ function CaregiverDashboard() {
         title: medicationForm.name,
         description: medicationForm.details,
         date: medicationForm.date,
-        is_active: true
-      })
+        is_active: true,
+      });
 
       const newMedication: MedicalRecord = {
         id: medId,
@@ -281,33 +306,33 @@ function CaregiverDashboard() {
         date: medicationForm.date,
         is_active: true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
-      setMedications([...medications, newMedication])
-      setShowMedicationForm(false)
-      resetMedicationForm()
+      setMedications([...medications, newMedication]);
+      setShowMedicationForm(false);
+      resetMedicationForm();
     } catch (error) {
-      console.error('Error adding medication:', error)
-      alert('Failed to add medication')
+      console.error('Error adding medication:', error);
+      alert('Failed to add medication');
     }
-  }
+  };
 
   const handleDeleteMedication = async (id: string) => {
-    if (!permissions.hasPermission('canManageMedications')) return
+    if (!permissions.hasPermission('canManageMedications')) return;
 
     try {
-      await medicalRecordService.deleteMedicalRecord(id)
-      setMedications(medications.filter(m => m.id !== id))
+      await medicalRecordService.deleteMedicalRecord(id);
+      setMedications(medications.filter((m) => m.id !== id));
     } catch (error) {
-      console.error('Error deleting medication:', error)
-      alert('Failed to delete medication')
+      console.error('Error deleting medication:', error);
+      alert('Failed to delete medication');
     }
-  }
+  };
 
   // Care Log Management
   const handleAddCareLog = async () => {
-    if (!selectedPatient || !user || !permissions.hasPermission('canAddCareLogs')) return
+    if (!selectedPatient || !user || !permissions.hasPermission('canAddCareLogs')) return;
 
     try {
       const logId = await medicalRecordService.createMedicalRecord({
@@ -316,8 +341,8 @@ function CaregiverDashboard() {
         title: careLogForm.name,
         description: careLogForm.details,
         date: careLogForm.date,
-        is_active: true
-      })
+        is_active: true,
+      });
 
       const newLog: MedicalRecord = {
         id: logId,
@@ -328,33 +353,33 @@ function CaregiverDashboard() {
         date: careLogForm.date,
         is_active: true,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      }
+        updated_at: new Date().toISOString(),
+      };
 
-      setCareLogs([newLog, ...careLogs])
-      setShowCareLogForm(false)
-      resetCareLogForm()
+      setCareLogs([newLog, ...careLogs]);
+      setShowCareLogForm(false);
+      resetCareLogForm();
     } catch (error) {
-      console.error('Error adding care log:', error)
-      alert('Failed to add care log')
+      console.error('Error adding care log:', error);
+      alert('Failed to add care log');
     }
-  }
+  };
 
   const handleDeleteCareLog = async (id: string) => {
-    if (!permissions.hasPermission('canDeleteCareLogs')) return
+    if (!permissions.hasPermission('canDeleteCareLogs')) return;
 
     try {
-      await medicalRecordService.deleteMedicalRecord(id)
-      setCareLogs(careLogs.filter(l => l.id !== id))
+      await medicalRecordService.deleteMedicalRecord(id);
+      setCareLogs(careLogs.filter((l) => l.id !== id));
     } catch (error) {
-      console.error('Error deleting care log:', error)
-      alert('Failed to delete care log')
+      console.error('Error deleting care log:', error);
+      alert('Failed to delete care log');
     }
-  }
+  };
 
   // Appointment Management
   const handleAddAppointment = async () => {
-    if (!selectedPatient || !permissions.hasPermission('canManageAppointments')) return
+    if (!selectedPatient || !permissions.hasPermission('canManageAppointments')) return;
 
     try {
       const apptId = await appointmentService.createAppointment({
@@ -363,8 +388,8 @@ function CaregiverDashboard() {
         title: appointmentForm.title,
         description: appointmentForm.description,
         location: appointmentForm.location,
-        status: 'scheduled'
-      })
+        status: 'scheduled',
+      });
 
       const newAppointment: Appointment = {
         id: apptId,
@@ -375,82 +400,87 @@ function CaregiverDashboard() {
         location: appointmentForm.location,
         status: 'scheduled' as AppointmentStatus,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
-      } as Appointment
+        updated_at: new Date().toISOString(),
+      } as Appointment;
 
-      setAppointments([...appointments, newAppointment])
-      setShowAppointmentForm(false)
-      resetAppointmentForm()
+      setAppointments([...appointments, newAppointment]);
+      setShowAppointmentForm(false);
+      resetAppointmentForm();
     } catch (error) {
-      console.error('Error adding appointment:', error)
-      alert('Failed to add appointment')
+      console.error('Error adding appointment:', error);
+      alert('Failed to add appointment');
     }
-  }
+  };
 
   const handleToggleAppointment = async (id: string, isCompleted: boolean) => {
-    if (!permissions.hasPermission('canManageAppointments')) return
+    if (!permissions.hasPermission('canManageAppointments')) return;
 
     try {
-      await appointmentService.updateAppointment(id, { status: isCompleted ? 'scheduled' : 'completed' })
-      setAppointments(appointments.map(a => 
-        a.id === id ? { ...a, status: isCompleted ? 'scheduled' : 'completed' } : a
-      ))
+      await appointmentService.updateAppointment(id, {
+        status: isCompleted ? 'scheduled' : 'completed',
+      });
+      setAppointments(
+        appointments.map((a) =>
+          a.id === id ? { ...a, status: isCompleted ? 'scheduled' : 'completed' } : a
+        )
+      );
     } catch (error) {
-      console.error('Error updating appointment:', error)
-      alert('Failed to update appointment')
+      console.error('Error updating appointment:', error);
+      alert('Failed to update appointment');
     }
-  }
+  };
 
   const handleDeleteAppointment = async (id: string) => {
-    if (!permissions.hasPermission('canManageAppointments')) return
+    if (!permissions.hasPermission('canManageAppointments')) return;
 
     try {
-      await appointmentService.deleteAppointment(id)
-      setAppointments(appointments.filter(a => a.id !== id))
+      await appointmentService.deleteAppointment(id);
+      setAppointments(appointments.filter((a) => a.id !== id));
     } catch (error) {
-      console.error('Error deleting appointment:', error)
-      alert('Failed to delete appointment')
+      console.error('Error deleting appointment:', error);
+      alert('Failed to delete appointment');
     }
-  }
+  };
 
   // Document Management
   const handleUploadDocument = async () => {
-    if (!selectedPatient || !selectedFile || !permissions.hasPermission('canUploadDocuments')) return
+    if (!selectedPatient || !selectedFile || !permissions.hasPermission('canUploadDocuments'))
+      return;
 
-    setUploadingFile(true)
+    setUploadingFile(true);
     try {
       await documentService.uploadDocument(selectedFile, selectedPatient.id, {
         name: documentForm.name,
         category: documentForm.category,
-        description: documentForm.date
-      })
+        description: documentForm.date,
+      });
 
       // Reload documents
-      const docs = await documentService.getDocuments(selectedPatient.id)
-      setDocuments(docs)
+      const docs = await documentService.getDocuments(selectedPatient.id);
+      setDocuments(docs);
 
-      setShowDocumentForm(false)
-      resetDocumentForm()
-      setSelectedFile(null)
+      setShowDocumentForm(false);
+      resetDocumentForm();
+      setSelectedFile(null);
     } catch (error) {
-      console.error('Error uploading document:', error)
-      alert('Failed to upload document')
+      console.error('Error uploading document:', error);
+      alert('Failed to upload document');
     } finally {
-      setUploadingFile(false)
+      setUploadingFile(false);
     }
-  }
+  };
 
   const handleDeleteDocument = async (id: string, fileUrl: string) => {
-    if (!permissions.hasPermission('canDeleteDocuments')) return
+    if (!permissions.hasPermission('canDeleteDocuments')) return;
 
     try {
-      await documentService.deleteDocument(id, fileUrl)
-      setDocuments(documents.filter(d => d.id !== id))
+      await documentService.deleteDocument(id, fileUrl);
+      setDocuments(documents.filter((d) => d.id !== id));
     } catch (error) {
-      console.error('Error deleting document:', error)
-      alert('Failed to delete document')
+      console.error('Error deleting document:', error);
+      alert('Failed to delete document');
     }
-  }
+  };
 
   // Form reset helpers
   const resetPatientForm = () => {
@@ -464,93 +494,101 @@ function CaregiverDashboard() {
       allergies: '',
       emergency_contact_name: '',
       emergency_contact_phone: '',
-      emergency_contact_relationship: ''
-    })
-  }
+      emergency_contact_relationship: '',
+    });
+  };
 
   const resetMedicationForm = () => {
     setMedicationForm({
       name: '',
       details: '',
-      date: new Date().toISOString().split('T')[0]
-    })
-  }
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
 
   const resetCareLogForm = () => {
     setCareLogForm({
       name: '',
       details: '',
-      date: new Date().toISOString().split('T')[0]
-    })
-  }
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
 
   const resetAppointmentForm = () => {
     setAppointmentForm({
       title: '',
       description: '',
-      appointmentDate: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
+      appointmentDate: new Date(new Date().setHours(new Date().getHours() + 1))
+        .toISOString()
+        .slice(0, 16),
       location: '',
       remindBeforeMinutes: 30,
-      repeatInterval: 'none'
-    })
-  }
+      repeatInterval: 'none',
+    });
+  };
 
   const resetDocumentForm = () => {
     setDocumentForm({
       name: '',
       category: 'medical',
-      date: new Date().toISOString().split('T')[0]
-    })
-  }
+      date: new Date().toISOString().split('T')[0],
+    });
+  };
 
   const upcomingAppointments = appointments
-    .filter(a => a.status === 'scheduled' && new Date(a.appointment_date) > new Date())
-    .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())
+    .filter((a) => a.status === 'scheduled' && new Date(a.appointment_date) > new Date())
+    .sort(
+      (a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime()
+    );
 
   const pastAppointments = appointments
-    .filter(a => a.status !== 'scheduled' || new Date(a.appointment_date) <= new Date())
-    .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
+    .filter((a) => a.status !== 'scheduled' || new Date(a.appointment_date) <= new Date())
+    .sort(
+      (a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime()
+    );
 
-  const activeMedications = medications
-  
+  const activeMedications = medications;
+
   // Filtered medications and appointments
-  const filteredMedications = activeMedications.filter(med => 
-    medicationSearch === '' || 
-    med.title.toLowerCase().includes(medicationSearch.toLowerCase()) ||
-    med.description?.toLowerCase().includes(medicationSearch.toLowerCase())
-  )
-  
-  const filteredAppointments = upcomingAppointments.filter(appt =>
-    appointmentSearch === '' ||
-    appt.title.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
-    appt.description?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
-    appt.location?.toLowerCase().includes(appointmentSearch.toLowerCase())
-  )
+  const filteredMedications = activeMedications.filter(
+    (med) =>
+      medicationSearch === '' ||
+      med.title.toLowerCase().includes(medicationSearch.toLowerCase()) ||
+      med.description?.toLowerCase().includes(medicationSearch.toLowerCase())
+  );
+
+  const filteredAppointments = upcomingAppointments.filter(
+    (appt) =>
+      appointmentSearch === '' ||
+      appt.title.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
+      appt.description?.toLowerCase().includes(appointmentSearch.toLowerCase()) ||
+      appt.location?.toLowerCase().includes(appointmentSearch.toLowerCase())
+  );
 
   // Urgent appointments within 7 days
-  const now = new Date()
-  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
-  const urgentAppointments = upcomingAppointments.filter(a => {
-    const apptDate = new Date(a.appointment_date)
-    return apptDate <= weekFromNow
-  })
+  const now = new Date();
+  const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
+  const urgentAppointments = upcomingAppointments.filter((a) => {
+    const apptDate = new Date(a.appointment_date);
+    return apptDate <= weekFromNow;
+  });
 
   const getUrgencyLevel = (date: string) => {
-    const apptDate = new Date(date)
-    const hoursUntil = (apptDate.getTime() - now.getTime()) / (1000 * 60 * 60)
-    if (hoursUntil < 24) return 'critical'
-    if (hoursUntil < 72) return 'warning'
-    return 'normal'
-  }
+    const apptDate = new Date(date);
+    const hoursUntil = (apptDate.getTime() - now.getTime()) / (1000 * 60 * 60);
+    if (hoursUntil < 24) return 'critical';
+    if (hoursUntil < 72) return 'warning';
+    return 'normal';
+  };
 
   const getTimeUntil = (date: string) => {
-    const apptDate = new Date(date)
-    const hoursUntil = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60))
-    if (hoursUntil < 1) return 'Less than 1 hour'
-    if (hoursUntil < 24) return `${hoursUntil} hour${hoursUntil !== 1 ? 's' : ''}`
-    const daysUntil = Math.floor(hoursUntil / 24)
-    return `${daysUntil} day${daysUntil !== 1 ? 's' : ''}`
-  }
+    const apptDate = new Date(date);
+    const hoursUntil = Math.floor((apptDate.getTime() - now.getTime()) / (1000 * 60 * 60));
+    if (hoursUntil < 1) return 'Less than 1 hour';
+    if (hoursUntil < 24) return `${hoursUntil} hour${hoursUntil !== 1 ? 's' : ''}`;
+    const daysUntil = Math.floor(hoursUntil / 24);
+    return `${daysUntil} day${daysUntil !== 1 ? 's' : ''}`;
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -571,7 +609,7 @@ function CaregiverDashboard() {
                 </div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-3">
               {selectedPatient && (
                 <>
@@ -583,24 +621,26 @@ function CaregiverDashboard() {
                     <AlertCircle className="w-4 h-4" />
                     Emergency Summary
                   </Button>
-                  
+
                   {permissions.isCaregiver && patients.length > 1 && (
                     <select
                       value={selectedPatient.id}
                       onChange={(e) => {
-                        const patient = patients.find(p => p.id === e.target.value)
-                        setSelectedPatient(patient || null)
+                        const patient = patients.find((p) => p.id === e.target.value);
+                        setSelectedPatient(patient || null);
                       }}
                       className="px-3 py-2 border rounded-lg"
                     >
-                      {patients.map(p => (
-                        <option key={p.id} value={p.id}>{p.first_name} {p.last_name}</option>
+                      {patients.map((p) => (
+                        <option key={p.id} value={p.id}>
+                          {p.first_name} {p.last_name}
+                        </option>
                       ))}
                     </select>
                   )}
                 </>
               )}
-              
+
               {permissions.isCaregiver && (
                 <>
                   <Button
@@ -619,17 +659,19 @@ function CaregiverDashboard() {
                     <Users className="w-4 h-4" />
                     All Patients
                   </Button>
-                  <Button onClick={() => {
-                    setSelectedPatient(null)
-                    resetPatientForm()
-                    setShowPatientForm(true)
-                  }}>
+                  <Button
+                    onClick={() => {
+                      setSelectedPatient(null);
+                      resetPatientForm();
+                      setShowPatientForm(true);
+                    }}
+                  >
                     <Users className="w-4 h-4 mr-2" />
                     Add Patient
                   </Button>
                 </>
               )}
-              
+
               <Button
                 variant="outline"
                 size="icon"
@@ -638,13 +680,13 @@ function CaregiverDashboard() {
               >
                 <UserCircle className="w-4 h-4" />
               </Button>
-              
+
               <Button
                 variant="outline"
                 size="icon"
                 onClick={async () => {
-                  await supabase?.auth.signOut()
-                  router.push('/login')
+                  await supabase?.auth.signOut();
+                  router.push('/login');
                 }}
                 title="Logout"
               >
@@ -672,32 +714,38 @@ function CaregiverDashboard() {
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                {urgentAppointments.map(appt => {
-                  const urgency = getUrgencyLevel(appt.appointment_date)
-                  const timeUntil = getTimeUntil(appt.appointment_date)
-                  
+                {urgentAppointments.map((appt) => {
+                  const urgency = getUrgencyLevel(appt.appointment_date);
+                  const timeUntil = getTimeUntil(appt.appointment_date);
+
                   return (
-                    <div 
-                      key={appt.id} 
+                    <div
+                      key={appt.id}
                       className={`p-3 rounded-lg border ${
-                        urgency === 'critical' 
-                          ? 'bg-red-50 border-red-200' 
+                        urgency === 'critical'
+                          ? 'bg-red-50 border-red-200'
                           : urgency === 'warning'
-                          ? 'bg-yellow-50 border-yellow-200'
-                          : 'bg-blue-50 border-blue-200'
+                            ? 'bg-yellow-50 border-yellow-200'
+                            : 'bg-blue-50 border-blue-200'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div className="flex-1">
                           <div className="flex items-center gap-2 mb-1">
-                            <span className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
-                              urgency === 'critical'
-                                ? 'bg-red-100 text-red-800'
+                            <span
+                              className={`inline-block px-2 py-0.5 rounded text-xs font-medium ${
+                                urgency === 'critical'
+                                  ? 'bg-red-100 text-red-800'
+                                  : urgency === 'warning'
+                                    ? 'bg-yellow-100 text-yellow-800'
+                                    : 'bg-blue-100 text-blue-800'
+                              }`}
+                            >
+                              {urgency === 'critical'
+                                ? 'URGENT'
                                 : urgency === 'warning'
-                                ? 'bg-yellow-100 text-yellow-800'
-                                : 'bg-blue-100 text-blue-800'
-                            }`}>
-                              {urgency === 'critical' ? 'URGENT' : urgency === 'warning' ? 'SOON' : 'UPCOMING'}
+                                  ? 'SOON'
+                                  : 'UPCOMING'}
                             </span>
                             <span className="text-sm font-medium">{appt.title}</span>
                           </div>
@@ -707,21 +755,19 @@ function CaregiverDashboard() {
                               month: 'short',
                               day: 'numeric',
                               hour: 'numeric',
-                              minute: '2-digit'
+                              minute: '2-digit',
                             })}
                           </p>
                           <p className="text-xs font-medium text-muted-foreground mt-1">
                             In {timeUntil}
                           </p>
                           {appt.description && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {appt.description}
-                            </p>
+                            <p className="text-xs text-muted-foreground mt-1">{appt.description}</p>
                           )}
                         </div>
                       </div>
                     </div>
-                  )
+                  );
                 })}
               </CardContent>
             </Card>
@@ -742,24 +788,23 @@ function CaregiverDashboard() {
                     Start managing care by adding your first patient
                   </p>
                   <p className="text-sm text-muted-foreground mb-8 max-w-md mx-auto">
-                    As a caregiver, you can track medications, appointments, medical records, and care logs for all your patients in one secure place.
+                    As a caregiver, you can track medications, appointments, medical records, and
+                    care logs for all your patients in one secure place.
                   </p>
-                  <Button 
-                    size="lg" 
-                    onClick={() => setShowPatientForm(true)}
-                    className="gap-2"
-                  >
+                  <Button size="lg" onClick={() => setShowPatientForm(true)} className="gap-2">
                     <Users className="w-5 h-5" />
                     Add Your First Patient
                   </Button>
-                  
+
                   <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
                     <div className="text-center p-4">
                       <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-blue-100 flex items-center justify-center">
                         <Pill className="w-6 h-6 text-blue-600" />
                       </div>
                       <h3 className="font-semibold mb-1">Track Medications</h3>
-                      <p className="text-sm text-muted-foreground">Manage prescriptions and dosages</p>
+                      <p className="text-sm text-muted-foreground">
+                        Manage prescriptions and dosages
+                      </p>
                     </div>
                     <div className="text-center p-4">
                       <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-green-100 flex items-center justify-center">
@@ -786,7 +831,8 @@ function CaregiverDashboard() {
                 <AlertCircle className="w-16 h-16 mx-auto mb-4 text-orange-500" />
                 <h2 className="text-2xl font-bold mb-2">No Care Record Found</h2>
                 <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-                  Your caregiver needs to add you as a patient to their care list. Please contact your caregiver to link your account.
+                  Your caregiver needs to add you as a patient to their care list. Please contact
+                  your caregiver to link your account.
                 </p>
                 <div className="inline-flex items-center gap-2 text-sm text-muted-foreground bg-white px-4 py-2 rounded-lg border">
                   <Shield className="w-4 h-4" />
@@ -812,7 +858,7 @@ function CaregiverDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -826,7 +872,7 @@ function CaregiverDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -840,7 +886,7 @@ function CaregiverDashboard() {
                   </div>
                 </CardContent>
               </Card>
-              
+
               <Card>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
@@ -861,7 +907,9 @@ function CaregiverDashboard() {
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle className="text-2xl">{selectedPatient.first_name} {selectedPatient.last_name}</CardTitle>
+                    <CardTitle className="text-2xl">
+                      {selectedPatient.first_name} {selectedPatient.last_name}
+                    </CardTitle>
                     <CardDescription>
                       Born: {new Date(selectedPatient.date_of_birth).toLocaleDateString()}
                     </CardDescription>
@@ -882,9 +930,10 @@ function CaregiverDashboard() {
                             allergies: selectedPatient.allergies || '',
                             emergency_contact_name: selectedPatient.emergency_contact_name || '',
                             emergency_contact_phone: selectedPatient.emergency_contact_phone || '',
-                            emergency_contact_relationship: selectedPatient.emergency_contact_relationship || ''
-                          })
-                          setShowPatientForm(true)
+                            emergency_contact_relationship:
+                              selectedPatient.emergency_contact_relationship || '',
+                          });
+                          setShowPatientForm(true);
                         }}
                       >
                         <Edit className="w-4 h-4" />
@@ -908,24 +957,21 @@ function CaregiverDashboard() {
                     <div>
                       <p className="text-sm font-medium">Emergency Contact</p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedPatient.emergency_contact_name} • {selectedPatient.emergency_contact_phone}
+                        {selectedPatient.emergency_contact_name} •{' '}
+                        {selectedPatient.emergency_contact_phone}
                       </p>
                     </div>
                   )}
                   {selectedPatient.allergies && (
                     <div>
                       <p className="text-sm font-medium">Allergies</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedPatient.allergies}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedPatient.allergies}</p>
                     </div>
                   )}
                   {selectedPatient.diagnosis && (
                     <div>
                       <p className="text-sm font-medium">Diagnosis</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedPatient.diagnosis}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedPatient.diagnosis}</p>
                     </div>
                   )}
                 </div>
@@ -985,7 +1031,11 @@ function CaregiverDashboard() {
                                 <div className="flex items-start justify-between">
                                   <div className="flex-1">
                                     <p className="font-medium">{med.title}</p>
-                                    {med.description && <p className="text-sm text-muted-foreground mt-1">{med.description}</p>}
+                                    {med.description && (
+                                      <p className="text-sm text-muted-foreground mt-1">
+                                        {med.description}
+                                      </p>
+                                    )}
                                     <div className="flex items-center gap-2 mt-2">
                                       <span className="text-xs px-2 py-0.5 bg-blue-100 text-blue-800 rounded">
                                         Started {new Date(med.date).toLocaleDateString()}
@@ -1058,7 +1108,7 @@ function CaregiverDashboard() {
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {filteredAppointments.slice(0, 5).map(appt => (
+                    {filteredAppointments.slice(0, 5).map((appt) => (
                       <div key={appt.id} className="p-3 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
@@ -1073,7 +1123,9 @@ function CaregiverDashboard() {
                                 variant="ghost"
                                 size="icon"
                                 className="h-8 w-8"
-                                onClick={() => handleToggleAppointment(appt.id, appt.status === 'completed')}
+                                onClick={() =>
+                                  handleToggleAppointment(appt.id, appt.status === 'completed')
+                                }
                               >
                                 <FileCheck className="w-4 h-4" />
                               </Button>
@@ -1117,8 +1169,11 @@ function CaregiverDashboard() {
                   </p>
                 ) : (
                   <div className="space-y-2">
-                    {documents.slice(0, 5).map(doc => (
-                      <div key={doc.id} className="flex items-center justify-between p-2 border rounded">
+                    {documents.slice(0, 5).map((doc) => (
+                      <div
+                        key={doc.id}
+                        className="flex items-center justify-between p-2 border rounded"
+                      >
                         <div className="flex items-center gap-2 flex-1">
                           <FileText className="w-4 h-4" />
                           <div className="flex-1 min-w-0">
@@ -1159,25 +1214,23 @@ function CaregiverDashboard() {
                 <div className="flex items-center justify-between">
                   <CardTitle>Care Logs</CardTitle>
                   {permissions.hasPermission('canAddCareLogs') && (
-                    <Button onClick={() => setShowCareLogForm(true)}>
-                      Add Log
-                    </Button>
+                    <Button onClick={() => setShowCareLogForm(true)}>Add Log</Button>
                   )}
                 </div>
               </CardHeader>
               <CardContent>
                 {careLogs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No care logs yet
-                  </p>
+                  <p className="text-sm text-muted-foreground text-center py-8">No care logs yet</p>
                 ) : (
                   <div className="space-y-4">
-                    {careLogs.slice(0, 10).map(log => (
+                    {careLogs.slice(0, 10).map((log) => (
                       <div key={log.id} className="p-4 border rounded-lg">
                         <div className="flex items-start justify-between">
                           <div className="flex-1">
                             <p className="font-medium mb-1">{log.title}</p>
-                            {log.description && <p className="text-sm text-muted-foreground">{log.description}</p>}
+                            {log.description && (
+                              <p className="text-sm text-muted-foreground">{log.description}</p>
+                            )}
                             <span className="text-xs text-muted-foreground">
                               {new Date(log.date).toLocaleDateString()}
                             </span>
@@ -1222,7 +1275,9 @@ function CaregiverDashboard() {
                   <Input
                     type="email"
                     value={patientForm.patient_email}
-                    onChange={(e) => setPatientForm({ ...patientForm, patient_email: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({ ...patientForm, patient_email: e.target.value })
+                    }
                     placeholder="patient@example.com"
                   />
                 </div>
@@ -1247,7 +1302,9 @@ function CaregiverDashboard() {
                   <Input
                     type="date"
                     value={patientForm.date_of_birth}
-                    onChange={(e) => setPatientForm({ ...patientForm, date_of_birth: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({ ...patientForm, date_of_birth: e.target.value })
+                    }
                   />
                 </div>
                 <div>
@@ -1256,34 +1313,34 @@ function CaregiverDashboard() {
                     <Input
                       value={patientForm.diagnosis}
                       onChange={(e) => {
-                        const value = e.target.value
-                        setPatientForm({ ...patientForm, diagnosis: value })
-                        
+                        const value = e.target.value;
+                        setPatientForm({ ...patientForm, diagnosis: value });
+
                         // Filter suggestions
                         if (value.length > 0) {
-                          const filtered = commonDiagnoses.filter(d => 
+                          const filtered = commonDiagnoses.filter((d) =>
                             d.toLowerCase().includes(value.toLowerCase())
-                          )
-                          setDiagnosisSuggestions(filtered)
-                          setShowDiagnosisSuggestions(filtered.length > 0)
+                          );
+                          setDiagnosisSuggestions(filtered);
+                          setShowDiagnosisSuggestions(filtered.length > 0);
                         } else {
-                          setShowDiagnosisSuggestions(false)
+                          setShowDiagnosisSuggestions(false);
                         }
                       }}
                       onFocus={() => {
                         if (patientForm.diagnosis.length > 0) {
-                          const filtered = commonDiagnoses.filter(d => 
+                          const filtered = commonDiagnoses.filter((d) =>
                             d.toLowerCase().includes(patientForm.diagnosis.toLowerCase())
-                          )
+                          );
                           if (filtered.length > 0) {
-                            setDiagnosisSuggestions(filtered)
-                            setShowDiagnosisSuggestions(true)
+                            setDiagnosisSuggestions(filtered);
+                            setShowDiagnosisSuggestions(true);
                           }
                         }
                       }}
                       onBlur={() => {
                         // Delay to allow click on suggestion
-                        setTimeout(() => setShowDiagnosisSuggestions(false), 200)
+                        setTimeout(() => setShowDiagnosisSuggestions(false), 200);
                       }}
                       placeholder="Primary diagnosis"
                     />
@@ -1295,8 +1352,8 @@ function CaregiverDashboard() {
                             type="button"
                             className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
                             onClick={() => {
-                              setPatientForm({ ...patientForm, diagnosis })
-                              setShowDiagnosisSuggestions(false)
+                              setPatientForm({ ...patientForm, diagnosis });
+                              setShowDiagnosisSuggestions(false);
                             }}
                           >
                             {diagnosis}
@@ -1310,7 +1367,9 @@ function CaregiverDashboard() {
                   <Label>Emergency Contact Name</Label>
                   <Input
                     value={patientForm.emergency_contact_name}
-                    onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_name: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({ ...patientForm, emergency_contact_name: e.target.value })
+                    }
                     placeholder="e.g., John Doe"
                   />
                 </div>
@@ -1318,7 +1377,9 @@ function CaregiverDashboard() {
                   <Label>Emergency Contact Phone</Label>
                   <Input
                     value={patientForm.emergency_contact_phone}
-                    onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_phone: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({ ...patientForm, emergency_contact_phone: e.target.value })
+                    }
                     placeholder="e.g., (555) 123-4567"
                   />
                 </div>
@@ -1326,7 +1387,12 @@ function CaregiverDashboard() {
                   <Label>Relationship</Label>
                   <select
                     value={patientForm.emergency_contact_relationship}
-                    onChange={(e) => setPatientForm({ ...patientForm, emergency_contact_relationship: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({
+                        ...patientForm,
+                        emergency_contact_relationship: e.target.value,
+                      })
+                    }
                     className="w-full px-3 py-2 border rounded-lg"
                   >
                     <option value="">Select relationship</option>
@@ -1351,7 +1417,9 @@ function CaregiverDashboard() {
                   <Label>Current Medications</Label>
                   <Textarea
                     value={patientForm.medications}
-                    onChange={(e) => setPatientForm({ ...patientForm, medications: e.target.value })}
+                    onChange={(e) =>
+                      setPatientForm({ ...patientForm, medications: e.target.value })
+                    }
                     rows={3}
                     placeholder="List current medications"
                   />
@@ -1389,34 +1457,34 @@ function CaregiverDashboard() {
                   <Input
                     value={medicationForm.name}
                     onChange={(e) => {
-                      const value = e.target.value
-                      setMedicationForm({ ...medicationForm, name: value })
-                      
+                      const value = e.target.value;
+                      setMedicationForm({ ...medicationForm, name: value });
+
                       // Filter suggestions
                       if (value.length > 0) {
-                        const filtered = commonMedications.filter(m => 
+                        const filtered = commonMedications.filter((m) =>
                           m.toLowerCase().includes(value.toLowerCase())
-                        )
-                        setMedicationSuggestions(filtered)
-                        setShowMedicationSuggestions(filtered.length > 0)
+                        );
+                        setMedicationSuggestions(filtered);
+                        setShowMedicationSuggestions(filtered.length > 0);
                       } else {
-                        setShowMedicationSuggestions(false)
+                        setShowMedicationSuggestions(false);
                       }
                     }}
                     onFocus={() => {
                       if (medicationForm.name.length > 0) {
-                        const filtered = commonMedications.filter(m => 
+                        const filtered = commonMedications.filter((m) =>
                           m.toLowerCase().includes(medicationForm.name.toLowerCase())
-                        )
+                        );
                         if (filtered.length > 0) {
-                          setMedicationSuggestions(filtered)
-                          setShowMedicationSuggestions(true)
+                          setMedicationSuggestions(filtered);
+                          setShowMedicationSuggestions(true);
                         }
                       }
                     }}
                     onBlur={() => {
                       // Delay to allow click on suggestion
-                      setTimeout(() => setShowMedicationSuggestions(false), 200)
+                      setTimeout(() => setShowMedicationSuggestions(false), 200);
                     }}
                     placeholder="e.g., Aspirin"
                   />
@@ -1428,8 +1496,8 @@ function CaregiverDashboard() {
                           type="button"
                           className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
                           onClick={() => {
-                            setMedicationForm({ ...medicationForm, name: medication })
-                            setShowMedicationSuggestions(false)
+                            setMedicationForm({ ...medicationForm, name: medication });
+                            setShowMedicationSuggestions(false);
                           }}
                         >
                           {medication}
@@ -1443,7 +1511,9 @@ function CaregiverDashboard() {
                 <Label>Details (dosage, frequency, instructions)</Label>
                 <Textarea
                   value={medicationForm.details}
-                  onChange={(e) => setMedicationForm({ ...medicationForm, details: e.target.value })}
+                  onChange={(e) =>
+                    setMedicationForm({ ...medicationForm, details: e.target.value })
+                  }
                   placeholder="e.g., 100mg twice daily with food"
                   rows={3}
                 />
@@ -1460,9 +1530,7 @@ function CaregiverDashboard() {
                 <Button variant="outline" onClick={() => setShowMedicationForm(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddMedication}>
-                  Add Medication
-                </Button>
+                <Button onClick={handleAddMedication}>Add Medication</Button>
               </div>
             </CardContent>
           </Card>
@@ -1503,9 +1571,7 @@ function CaregiverDashboard() {
                 <Button variant="outline" onClick={() => setShowCareLogForm(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddCareLog}>
-                  Add Log
-                </Button>
+                <Button onClick={handleAddCareLog}>Add Log</Button>
               </div>
             </CardContent>
           </Card>
@@ -1529,7 +1595,9 @@ function CaregiverDashboard() {
                 <Label>Title *</Label>
                 <Input
                   value={appointmentForm.title}
-                  onChange={(e) => setAppointmentForm({ ...appointmentForm, title: e.target.value })}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, title: e.target.value })
+                  }
                   placeholder="Doctor's appointment"
                 />
               </div>
@@ -1537,7 +1605,9 @@ function CaregiverDashboard() {
                 <Label>Description</Label>
                 <Textarea
                   value={appointmentForm.description}
-                  onChange={(e) => setAppointmentForm({ ...appointmentForm, description: e.target.value })}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, description: e.target.value })
+                  }
                   placeholder="Additional details"
                   rows={2}
                 />
@@ -1547,7 +1617,9 @@ function CaregiverDashboard() {
                 <Input
                   type="datetime-local"
                   value={appointmentForm.appointmentDate}
-                  onChange={(e) => setAppointmentForm({ ...appointmentForm, appointmentDate: e.target.value })}
+                  onChange={(e) =>
+                    setAppointmentForm({ ...appointmentForm, appointmentDate: e.target.value })
+                  }
                 />
               </div>
               <div className="grid grid-cols-2 gap-4">
@@ -1556,14 +1628,24 @@ function CaregiverDashboard() {
                   <Input
                     type="number"
                     value={appointmentForm.remindBeforeMinutes}
-                    onChange={(e) => setAppointmentForm({ ...appointmentForm, remindBeforeMinutes: parseInt(e.target.value) || 0 })}
+                    onChange={(e) =>
+                      setAppointmentForm({
+                        ...appointmentForm,
+                        remindBeforeMinutes: parseInt(e.target.value) || 0,
+                      })
+                    }
                   />
                 </div>
                 <div>
                   <Label>Repeat</Label>
                   <select
                     value={appointmentForm.repeatInterval}
-                    onChange={(e) => setAppointmentForm({ ...appointmentForm, repeatInterval: e.target.value as any })}
+                    onChange={(e) =>
+                      setAppointmentForm({
+                        ...appointmentForm,
+                        repeatInterval: e.target.value as any,
+                      })
+                    }
                     className="w-full px-3 py-2 border rounded-lg"
                   >
                     <option value="none">None</option>
@@ -1577,9 +1659,7 @@ function CaregiverDashboard() {
                 <Button variant="outline" onClick={() => setShowAppointmentForm(false)}>
                   Cancel
                 </Button>
-                <Button onClick={handleAddAppointment}>
-                  Add Appointment
-                </Button>
+                <Button onClick={handleAddAppointment}>Add Appointment</Button>
               </div>
             </CardContent>
           </Card>
@@ -1611,7 +1691,12 @@ function CaregiverDashboard() {
                 <Label>Category</Label>
                 <select
                   value={documentForm.category}
-                  onChange={(e) => setDocumentForm({ ...documentForm, category: e.target.value as DocumentCategory })}
+                  onChange={(e) =>
+                    setDocumentForm({
+                      ...documentForm,
+                      category: e.target.value as DocumentCategory,
+                    })
+                  }
                   className="w-full px-3 py-2 border rounded-lg"
                 >
                   <option value="medical">Medical</option>
@@ -1622,16 +1707,13 @@ function CaregiverDashboard() {
               </div>
               <div>
                 <Label>File *</Label>
-                <Input
-                  type="file"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                />
+                <Input type="file" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
               </div>
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setShowDocumentForm(false)}>
                   Cancel
                 </Button>
-                <Button 
+                <Button
                   onClick={handleUploadDocument}
                   disabled={uploadingFile || !selectedFile || !documentForm.name}
                 >
@@ -1693,7 +1775,9 @@ function CaregiverDashboard() {
                 {userRole === 'caregiver' && patients.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Managing Patients</p>
-                    <p className="text-base">{patients.length} patient{patients.length !== 1 ? 's' : ''}</p>
+                    <p className="text-base">
+                      {patients.length} patient{patients.length !== 1 ? 's' : ''}
+                    </p>
                   </div>
                 )}
 
@@ -1704,7 +1788,8 @@ function CaregiverDashboard() {
                       <p className="text-sm">You are receiving care through CareVault</p>
                       {selectedPatient.diagnosis && (
                         <p className="text-sm mt-1">
-                          <span className="font-medium">Diagnosis:</span> {selectedPatient.diagnosis}
+                          <span className="font-medium">Diagnosis:</span>{' '}
+                          {selectedPatient.diagnosis}
                         </p>
                       )}
                     </div>
@@ -1726,7 +1811,7 @@ function CaregiverDashboard() {
         </div>
       )}
     </div>
-  )
+  );
 }
 
 export default function ProtectedDashboard() {
@@ -1734,5 +1819,5 @@ export default function ProtectedDashboard() {
     <ProtectedRoute>
       <CaregiverDashboard />
     </ProtectedRoute>
-  )
+  );
 }

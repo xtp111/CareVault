@@ -15,10 +15,7 @@ const config = {
   },
 
   // Test file patterns - explicitly use .test. pattern to avoid Playwright .spec. files
-  testMatch: [
-    '**/__tests__/**/*.test.[jt]s?(x)',
-    '**/*.test.[jt]s?(x)',
-  ],
+  testMatch: ['**/__tests__/**/*.test.[jt]s?(x)', '**/*.test.[jt]s?(x)'],
 
   // Ignore Playwright tests and node_modules
   testPathIgnorePatterns: [
@@ -29,23 +26,24 @@ const config = {
 
   // Transform TypeScript files using ts-jest
   transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      tsconfig: {
-        jsx: 'react-jsx',
-        esModuleInterop: true,
-        module: 'commonjs',
-        moduleResolution: 'node',
+    '^.+\\.tsx?$': [
+      'ts-jest',
+      {
+        tsconfig: {
+          jsx: 'react-jsx',
+          esModuleInterop: true,
+          module: 'commonjs',
+          moduleResolution: 'node',
+        },
       },
-    }],
+    ],
   },
 
   // File extensions to consider
   moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json'],
 
   // Ignore transforming node_modules except specific packages if needed
-  transformIgnorePatterns: [
-    '/node_modules/',
-  ],
+  transformIgnorePatterns: ['/node_modules/'],
 
   // Coverage configuration
   collectCoverageFrom: [

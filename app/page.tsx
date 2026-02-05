@@ -1,24 +1,24 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuth } from '@/contexts/AuthContext'
-import { Card, CardContent } from '@/components/ui/card'
-import { Heart } from 'lucide-react'
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useAuth } from '@/contexts/AuthContext';
+import { Card, CardContent } from '@/components/ui/card';
+import { Heart } from 'lucide-react';
 
 export default function Home() {
-  const router = useRouter()
-  const { user, loading } = useAuth()
+  const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
     if (!loading) {
       if (user) {
-        router.push('/dashboard')
+        router.push('/dashboard');
       } else {
-        router.push('/login')
+        router.push('/login');
       }
     }
-  }, [user, loading, router])
+  }, [user, loading, router]);
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#FFF8F0] via-[#FFF5E6] to-[#FFE8CC]">
@@ -32,5 +32,5 @@ export default function Home() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

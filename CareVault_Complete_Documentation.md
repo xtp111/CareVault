@@ -96,12 +96,14 @@ CareVault provides eight major feature categories:
 ### 3.2 User Roles
 
 #### Caregiver Role
+
 - Full CRUD access to all patient data
 - Can manage multiple patients
 - Access to calendar and patient list views
 - Can generate emergency summaries
 
 #### Patient Role (Read-Only)
+
 - View all personal care information
 - Access to medications, appointments, and care logs
 - Can download documents
@@ -115,6 +117,7 @@ CareVault provides eight major feature categories:
 ### 4.1 Registration Process
 
 #### Caregiver Registration
+
 1. Navigate to `/login` page
 2. Click "Don't have an account? Register"
 3. Select role: "Caregiver"
@@ -128,6 +131,7 @@ CareVault provides eight major feature categories:
 7. Login to access dashboard
 
 #### Patient Registration
+
 1. Navigate to `/login` page
 2. Click "Don't have an account? Register"
 3. Select role: "Patient (View Only)"
@@ -143,6 +147,7 @@ CareVault provides eight major feature categories:
 7. Login to access read-only dashboard
 
 **Important Notes:**
+
 - Caregiver must register FIRST before patient can link to them
 - Caregiver email must EXACTLY match the registered caregiver's email
 - Patient-caregiver link is permanent and created during signup
@@ -173,10 +178,12 @@ CareVault provides eight major feature categories:
 The dashboard header provides quick access to key features:
 
 **Left Section:**
+
 - CareVault logo
 - Portal type indicator (Caregiver Portal / Patient Portal Read-Only)
 
 **Right Section:**
+
 - **Emergency Summary Button:** Generate PDF with critical patient information
 - **Patient Selector Dropdown:** (Caregivers only) Switch between multiple patients
 - **Calendar Button:** Access full calendar view
@@ -214,11 +221,13 @@ Four statistics cards display at the top of the dashboard:
 Displays appointments within the next 7 days with color-coded urgency:
 
 **Urgency Levels:**
+
 - **RED (URGENT):** Less than 24 hours remaining
 - **YELLOW (SOON):** Less than 72 hours remaining
 - **BLUE (UPCOMING):** Within 7 days
 
 **Information Displayed:**
+
 - Appointment title
 - Date and time
 - Time remaining (e.g., "2 days", "5 hours")
@@ -230,16 +239,19 @@ Displays appointments within the next 7 days with color-coded urgency:
 ### 5.4 Patient Profile Card
 
 **Basic Information:**
+
 - Full name (first name + last name)
 - Date of birth
 - Edit and Delete buttons (caregivers only)
 
 **Emergency Contact:**
+
 - Contact name
 - Phone number
 - Relationship
 
 **Medical Information:**
+
 - Allergies
 - Primary diagnosis
 - Current medications overview
@@ -247,22 +259,26 @@ Displays appointments within the next 7 days with color-coded urgency:
 ### 5.5 Medications Section
 
 **Features:**
+
 - Search box for filtering medications by name
 - Timeline visualization with vertical line
 - Chronological ordering (newest first)
 - "Current" badge on most recent medication
 
 **Each Medication Displays:**
+
 - Medication name (with smart autocomplete)
 - Dosage and frequency details
 - Start date badge
 - Instructions
 
 **Actions (Caregivers Only):**
+
 - Add new medication
 - Delete medication
 
 **Timeline Visualization:**
+
 - Vertical blue line connecting all medications
 - Dots marking each medication entry
 - Top medication highlighted as "Current"
@@ -270,17 +286,20 @@ Displays appointments within the next 7 days with color-coded urgency:
 ### 5.6 Appointments Section
 
 **Features:**
+
 - Search box for filtering by title or description
 - Shows next 5 upcoming appointments
 - Sorted chronologically
 
 **Each Appointment Displays:**
+
 - Title
 - Date and time
 - Location (if specified)
 - Description
 
 **Actions (Caregivers Only):**
+
 - Add new appointment
 - Mark as completed
 - Delete appointment
@@ -288,38 +307,45 @@ Displays appointments within the next 7 days with color-coded urgency:
 ### 5.7 Documents Section
 
 **Features:**
+
 - Upload documents with categorization
 - File preview and download links
 - Displays last 5 documents
 
 **Document Categories:**
+
 - Medical
 - Legal
 - Financial
 - Identification
 
 **Each Document Displays:**
+
 - Document name
 - Category badge
 - Upload date
 - Download/view link
 
 **Actions (Caregivers Only):**
+
 - Upload new document
 - Delete document
 
 **Patient Access:**
+
 - Can view and download all documents
 - Cannot upload or delete
 
 ### 5.8 Care Logs Section
 
 **Features:**
+
 - Full-width section at bottom of dashboard
 - Chronological display (last 10 entries)
 - Supports multiple log types
 
 **Log Types:**
+
 - Daily Activity
 - Medication Administration
 - Meal Tracking
@@ -327,12 +353,14 @@ Displays appointments within the next 7 days with color-coded urgency:
 - Other Notes
 
 **Each Log Entry Displays:**
+
 - Log title
 - Detailed notes/description
 - Date recorded
 - Type indicator
 
 **Actions (Caregivers Only):**
+
 - Add new care log
 - Delete care log
 
@@ -347,6 +375,7 @@ The `/patients` page provides caregivers with a grid view of all their patients.
 ### 6.2 Layout
 
 **Responsive Grid:**
+
 - Mobile: 1 column
 - Tablet (768px+): 2 columns
 - Desktop (1024px+): 3 columns
@@ -354,6 +383,7 @@ The `/patients` page provides caregivers with a grid view of all their patients.
 ### 6.3 Search & Filter Features
 
 #### Search Functionality
+
 - Real-time search as you type
 - Searches across:
   - First name
@@ -362,11 +392,13 @@ The `/patients` page provides caregivers with a grid view of all their patients.
 - Clear button (X icon) to reset search
 
 #### Filter Functionality
+
 - Dropdown filter by diagnosis
 - "All Diagnoses" option to show all patients
 - "Clear Filters" button appears when filters are active
 
 #### Filter Feedback
+
 - Result counter: "Showing X of Y patients"
 - Active search query display
 - Active diagnosis filter display
@@ -374,27 +406,32 @@ The `/patients` page provides caregivers with a grid view of all their patients.
 ### 6.4 Patient Cards
 
 **Header:**
+
 - Avatar icon placeholder
 - Patient full name
 - Date of birth
 
 **Content:**
+
 - Diagnosis badge (if available)
 - Email address with icon
 - Emergency contact phone number
 - Emergency contact name
 
 **Actions:**
+
 - **View Details Button:** Navigate to patient's dashboard
 - **Delete Button:** Remove patient (with confirmation dialog)
 
 ### 6.5 Empty States
 
 **No Patients:**
+
 - Message: "Add your first patient to get started"
 - Prompt to use "Add Patient" button
 
 **No Matching Results:**
+
 - Message: "Try adjusting your search or filters"
 - "Clear Filters" button to reset
 
@@ -409,6 +446,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 ### 7.2 Calendar Navigation
 
 **Controls:**
+
 - **Previous Month Button:** Navigate to previous month
 - **Next Month Button:** Navigate to next month
 - **Today Button:** Jump to current date
@@ -417,11 +455,13 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 ### 7.3 Calendar Grid
 
 **Layout:**
+
 - 7-day week view (Sunday to Saturday)
 - Week rows spanning the entire month
 - Today's date highlighted in blue border
 
 **Appointment Display:**
+
 - Each day shows up to 3 appointments
 - Appointment badges with time and title
 - Green background for appointment indicators
@@ -430,11 +470,13 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 ### 7.4 Upcoming Appointments List
 
 **Features:**
+
 - Displays next 10 scheduled appointments
 - Sorted chronologically
 - Full appointment details
 
 **Each Appointment Shows:**
+
 - Title
 - Date and time
 - Location (if specified)
@@ -449,6 +491,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 **Purpose:** Help caregivers quickly select common diagnoses without typing full names.
 
 **Common Diagnoses Database:**
+
 - Alzheimer's Disease
 - Dementia
 - Parkinson's Disease
@@ -461,6 +504,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 - Depression
 
 **How It Works:**
+
 1. User begins typing in diagnosis field
 2. System filters suggestions in real-time
 3. Matching diagnoses appear in dropdown
@@ -468,6 +512,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 5. Can also type custom diagnosis
 
 **Technical Details:**
+
 - Case-insensitive matching
 - Partial string matching
 - 200ms delay before dropdown closes (allows click)
@@ -477,6 +522,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 **Purpose:** Speed up medication entry with common medication names.
 
 **Common Medications Database:**
+
 - Aspirin
 - Metformin
 - Lisinopril
@@ -492,6 +538,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 - Donepezil
 
 **How It Works:**
+
 1. User begins typing in medication name field
 2. System filters suggestions as user types
 3. Dropdown shows matching medications
@@ -499,6 +546,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 5. Can enter custom medication name
 
 **Technical Details:**
+
 - Real-time filtering
 - Case-insensitive search
 - Supports partial matches
@@ -509,6 +557,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 **Purpose:** Standardize relationship entries for consistency.
 
 **Predefined Relationships:**
+
 - Spouse
 - Child
 - Parent
@@ -518,6 +567,7 @@ The `/calendar` page provides a monthly calendar view of all appointments across
 - Other (allows custom entry)
 
 **Benefits:**
+
 - Data consistency
 - Faster data entry
 - Better reporting capabilities
@@ -534,6 +584,7 @@ Accessible via Profile button in header navigation.
 ### 9.2 User Information Section
 
 **All Users See:**
+
 - Avatar placeholder with user icon
 - Full name
 - Email address
@@ -543,11 +594,13 @@ Accessible via Profile button in header navigation.
 ### 9.3 Role-Specific Information
 
 #### Caregiver Profile
+
 - Number of patients being managed
 - Account creation date
 - Last login information (if tracked)
 
 #### Patient Profile
+
 - Care status: "You are receiving care through CareVault"
 - Primary diagnosis (if available)
 - Caregiver information:
@@ -571,11 +624,13 @@ The Emergency Summary provides a quick, printable PDF containing critical patien
 ### 10.2 Contents
 
 **Patient Basic Information:**
+
 - Full name
 - Date of birth
 - Emergency contact name and phone
 
 **Medical Information:**
+
 - Primary diagnosis
 - Known allergies
 - Current medications with dosages
@@ -608,11 +663,13 @@ Patients have comprehensive view-only access to their care information. This sec
 ### 11.2 Registration Requirements
 
 **Prerequisites:**
+
 - Caregiver must register FIRST
 - Patient needs caregiver's exact email address
 - Patient needs caregiver's full name
 
 **Registration Steps:**
+
 1. Select "Patient (View Only)" role
 2. Enter personal email and password
 3. Enter caregiver's email (must match exactly)
@@ -623,6 +680,7 @@ Patients have comprehensive view-only access to their care information. This sec
 ### 11.3 What Patients CAN Access
 
 #### Dashboard View
+
 - ✓ All data overview cards
 - ✓ Urgent appointments alert (view only)
 - ✓ Complete patient profile
@@ -632,27 +690,32 @@ Patients have comprehensive view-only access to their care information. This sec
 - ✓ All care logs
 
 #### Search Features
+
 - ✓ Medication search and filter
 - ✓ Appointment search and filter
 - ✓ Real-time filtering
 
 #### Profile Features
+
 - ✓ View personal profile
 - ✓ See caregiver information
 - ✓ View role and permissions
 
 #### PDF Generation
+
 - ✓ Generate Emergency Summary PDF
 - ✓ Download PDF to device
 
 ### 11.4 What Patients CANNOT Access
 
 #### Restricted Pages
+
 - ✗ `/patients` - Patient list page
 - ✗ `/calendar` - Calendar view
 - ✗ Automatically redirected to `/dashboard`
 
 #### Hidden UI Elements
+
 - ✗ "Add Patient" button
 - ✗ "All Patients" button
 - ✗ "Calendar" button
@@ -663,6 +726,7 @@ Patients have comprehensive view-only access to their care information. This sec
 - ✗ "Mark as Completed" buttons
 
 #### Restricted Actions
+
 - ✗ Create new records
 - ✗ Modify existing records
 - ✗ Delete any data
@@ -673,7 +737,9 @@ Patients have comprehensive view-only access to their care information. This sec
 ### 11.5 Visible Fields for Patients
 
 #### Care Recipient Record
+
 **Visible:**
+
 - id, first_name, last_name
 - patient_email (matches their login)
 - date_of_birth
@@ -682,48 +748,61 @@ Patients have comprehensive view-only access to their care information. This sec
 - is_active, created_at
 
 **Hidden:**
+
 - caregiver_id (privacy)
 - updated_at (internal)
 
 #### Medications (Medical Records)
+
 **Visible:**
+
 - id, title (medication name)
 - description (dosage, frequency)
 - date (start date)
 - type, is_active, created_at
 
 **Hidden:**
+
 - care_recipient_id (internal foreign key)
 - updated_at (internal)
 
 #### Appointments
+
 **Visible:**
+
 - id, title, description
 - appointment_date, location
 - doctor_name, status, notes
 - created_at
 
 **Hidden:**
+
 - care_recipient_id (internal)
 - updated_at (internal)
 
 #### Documents
+
 **Visible:**
+
 - id, name, category
 - file_url (can download)
 - file_name, file_size
 - description, created_at
 
 **Hidden:**
+
 - care_recipient_id (internal)
 - updated_at (internal)
 
 #### Care Logs
+
 **Visible:**
+
 - id, title, description
 - date, type, created_at
 
 **Hidden:**
+
 - care_recipient_id (internal)
 - is_active, updated_at (internal)
 
@@ -738,9 +817,11 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 ### 12.2 Tables
 
 #### 12.2.1 users
+
 **Purpose:** Store user account information for both caregivers and patients.
 
 **Columns:**
+
 - `id` - UUID (Primary Key, links to auth.users)
 - `email` - String (Unique, not null)
 - `full_name` - String
@@ -750,14 +831,17 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Unique index on `email`
 - Index on `role` for filtering
 
 #### 12.2.2 care_recipients
+
 **Purpose:** Store patient information and link to caregivers.
 
 **Columns:**
+
 - `id` - UUID (Primary Key)
 - `caregiver_id` - UUID (Foreign Key to users.id)
 - `patient_email` - String (Optional, links to patient user)
@@ -774,15 +858,18 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `caregiver_id`
 - Index on `patient_email`
 - Composite index on (caregiver_id, is_active)
 
 #### 12.2.3 medical_records
+
 **Purpose:** Store medications, conditions, procedures, lab results, and vital signs.
 
 **Columns:**
+
 - `id` - UUID (Primary Key)
 - `care_recipient_id` - UUID (Foreign Key to care_recipients.id)
 - `type` - Enum (medication/condition/procedure/lab_result/vital_sign)
@@ -794,15 +881,18 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `care_recipient_id`
 - Index on `type`
 - Composite index on (care_recipient_id, type, date)
 
 #### 12.2.4 appointments
+
 **Purpose:** Store scheduled appointments and their details.
 
 **Columns:**
+
 - `id` - UUID (Primary Key)
 - `care_recipient_id` - UUID (Foreign Key to care_recipients.id)
 - `title` - String (Not null)
@@ -816,6 +906,7 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `care_recipient_id`
 - Index on `appointment_date`
@@ -823,9 +914,11 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - Composite index on (care_recipient_id, appointment_date, status)
 
 #### 12.2.5 documents
+
 **Purpose:** Store references to uploaded documents in Supabase Storage.
 
 **Columns:**
+
 - `id` - UUID (Primary Key)
 - `care_recipient_id` - UUID (Foreign Key to care_recipients.id)
 - `name` - String (Not null)
@@ -838,14 +931,17 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `care_recipient_id`
 - Index on `category`
 
 #### 12.2.6 emergency_contacts
+
 **Purpose:** Store additional emergency contacts beyond primary contact.
 
 **Columns:**
+
 - `id` - UUID (Primary Key)
 - `care_recipient_id` - UUID (Foreign Key to care_recipients.id)
 - `name` - String (Not null)
@@ -857,6 +953,7 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 - `updated_at` - Timestamp
 
 **Indexes:**
+
 - Primary key on `id`
 - Index on `care_recipient_id`
 - Index on `is_primary`
@@ -864,32 +961,38 @@ CareVault uses a PostgreSQL database hosted on Supabase with six main tables and
 ### 12.3 Database Functions
 
 #### 12.3.1 handle_new_user()
+
 **Purpose:** Automatically create user profile when new user signs up.
 
 **Trigger:** AFTER INSERT on auth.users
 
 **Actions:**
+
 1. Extract user metadata (full_name, role, phone)
 2. Insert record into public.users table
 3. Set created_at and updated_at timestamps
 
 #### 12.3.2 create_care_recipient_for_patient()
+
 **Purpose:** Automatically link patient user to caregiver during registration.
 
 **Trigger:** AFTER INSERT on public.users (when role = 'patient')
 
 **Actions:**
+
 1. Extract caregiver_email from user metadata
 2. Find caregiver_id from users table
 3. Create care_recipient record linking patient to caregiver
 4. Set patient_email to user's email for RLS access
 
 #### 12.3.3 sync_user_email()
+
 **Purpose:** Keep patient_email synchronized when user changes email.
 
 **Trigger:** AFTER UPDATE on auth.users
 
 **Actions:**
+
 1. Detect email change in auth.users
 2. Update patient_email in care_recipients table
 3. Maintain data consistency across tables
@@ -924,12 +1027,14 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 #### 13.2.1 care_recipients
 
 **Caregiver Policies:**
+
 - **SELECT:** WHERE caregiver_id = auth.uid()
 - **INSERT:** With caregiver_id set to auth.uid()
 - **UPDATE:** WHERE caregiver_id = auth.uid()
 - **DELETE:** WHERE caregiver_id = auth.uid()
 
 **Patient Policies:**
+
 - **SELECT:** WHERE patient_email = auth.email()
 - **INSERT:** NOT ALLOWED
 - **UPDATE:** NOT ALLOWED
@@ -938,12 +1043,14 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 #### 13.2.2 medical_records
 
 **Caregiver Policies:**
+
 - **SELECT:** WHERE care_recipient.caregiver_id = auth.uid()
 - **INSERT:** For care_recipients owned by caregiver
 - **UPDATE:** For care_recipients owned by caregiver
 - **DELETE:** For care_recipients owned by caregiver
 
 **Patient Policies:**
+
 - **SELECT:** WHERE care_recipient.patient_email = auth.email()
 - **INSERT:** NOT ALLOWED
 - **UPDATE:** NOT ALLOWED
@@ -952,12 +1059,14 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 #### 13.2.3 appointments
 
 **Caregiver Policies:**
+
 - **SELECT:** WHERE care_recipient.caregiver_id = auth.uid()
 - **INSERT:** For care_recipients owned by caregiver
 - **UPDATE:** For care_recipients owned by caregiver
 - **DELETE:** For care_recipients owned by caregiver
 
 **Patient Policies:**
+
 - **SELECT:** WHERE care_recipient.patient_email = auth.email()
 - **INSERT:** NOT ALLOWED
 - **UPDATE:** NOT ALLOWED
@@ -966,18 +1075,21 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 #### 13.2.4 documents
 
 **Caregiver Policies:**
+
 - **SELECT:** WHERE care_recipient.caregiver_id = auth.uid()
 - **INSERT:** For care_recipients owned by caregiver
 - **UPDATE:** For care_recipients owned by caregiver
 - **DELETE:** For care_recipients owned by caregiver
 
 **Patient Policies:**
+
 - **SELECT:** WHERE care_recipient.patient_email = auth.email()
 - **INSERT:** NOT ALLOWED
 - **UPDATE:** NOT ALLOWED
 - **DELETE:** NOT ALLOWED
 
 **Storage Policies:**
+
 - Patients can READ files (download)
 - Patients cannot WRITE or DELETE files
 
@@ -1006,16 +1118,19 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 13.4 Authentication Security
 
 **Password Requirements:**
+
 - Minimum 8 characters (configurable in Supabase)
 - Enforced by Supabase Auth
 - Password reset via email
 
 **Session Management:**
+
 - JWT tokens with configurable expiration
 - Automatic refresh handling
 - Secure HTTP-only cookies (when configured)
 
 **Email Verification:**
+
 - Optional email confirmation on signup
 - Prevents fake account creation
 - Configurable in Supabase dashboard
@@ -1027,22 +1142,26 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 14.1 Responsive Design
 
 #### Breakpoints
+
 - **Mobile:** < 768px (1 column layouts)
 - **Tablet:** 768px - 1024px (2 column layouts)
 - **Desktop:** > 1024px (3 column layouts)
 
 #### Mobile Optimizations
+
 - Touch-friendly button sizes (minimum 44x44px)
 - Stacked layouts for easy scrolling
 - Collapsible sections for space efficiency
 - Bottom-aligned action buttons
 
 #### Tablet Optimizations
+
 - 2-column grid for patient cards
 - Side-by-side form layouts
 - Expanded data overview cards
 
 #### Desktop Optimizations
+
 - 3-column grid for patient cards
 - Wider modals with side-by-side fields
 - Expanded header with all navigation
@@ -1051,22 +1170,26 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 14.2 Visual Hierarchy
 
 #### Color Coding
+
 - **Blue:** Medications and medical information
 - **Green:** Appointments and scheduling
 - **Purple:** Care logs and daily activities
 - **Orange:** Documents and files
 
 #### Urgency Indicators
+
 - **Red:** Urgent (< 24 hours)
 - **Yellow:** Soon (< 72 hours)
 - **Blue:** Upcoming (< 7 days)
 
 #### Icon System
+
 - Lucide React icons for consistency
 - Color-matched to section
 - Meaningful visual representation
 
 #### Typography
+
 - Clear heading hierarchy (h1, h2, h3)
 - Readable body text (16px base)
 - Bold for emphasis
@@ -1075,21 +1198,25 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 14.3 Search & Filter UX
 
 #### Real-Time Filtering
+
 - No submit button needed
 - Instant results as you type
 - Smooth transitions
 
 #### Clear Actions
+
 - X icon for clearing search
 - "Clear Filters" button when active
 - Visual feedback on active filters
 
 #### Result Feedback
+
 - "Showing X of Y" counters
 - Active search query display
 - Empty state messages
 
 #### Empty States
+
 - Friendly guidance messages
 - Clear next actions
 - Illustrations (if applicable)
@@ -1097,18 +1224,21 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 14.4 Form Design
 
 #### Input Enhancements
+
 - Autocomplete dropdowns
 - Date/time pickers with defaults
-- Required field indicators (*)
+- Required field indicators (\*)
 - Inline validation
 
 #### Modal Overlays
+
 - Focused data entry
 - Dark overlay for context
 - Close on Escape key
 - Click outside to close
 
 #### Button Placement
+
 - Primary action on right
 - Secondary/Cancel on left
 - Consistent across all forms
@@ -1117,18 +1247,21 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 14.5 Data Visualization
 
 #### Timeline View
+
 - Vertical line connecting entries
 - Chronological ordering
 - "Current" indicators
 - Date badges
 
 #### Calendar Grid
+
 - Traditional month view
 - Color-coded appointments
 - "+X more" for overflow
 - Today highlighting
 
 #### Statistics Cards
+
 - Large numbers for impact
 - Color-coded icons
 - Descriptive labels
@@ -1141,6 +1274,7 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 ### 15.1 Local Development Setup
 
 #### Prerequisites
+
 - Node.js 18 or higher
 - npm or yarn package manager
 - Git version control
@@ -1150,17 +1284,20 @@ CareVault implements comprehensive Row Level Security at the database level, ens
 #### Installation Steps
 
 **1. Clone Repository:**
+
 ```bash
 git clone <repository-url>
 cd caregiver_app_project
 ```
 
 **2. Install Dependencies:**
+
 ```bash
 npm install
 ```
 
 **3. Environment Configuration:**
+
 ```bash
 # Copy example env file
 cp .env.local.example .env.local
@@ -1171,6 +1308,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
 **4. Start Development Server:**
+
 ```bash
 npm run dev
 ```
@@ -1212,6 +1350,7 @@ SELECT tablename, policyname, cmd FROM pg_policies WHERE schemaname = 'public';
 #### Method 1: Git Integration (Recommended)
 
 **1. Push to Git Repository:**
+
 ```bash
 git init
 git add .
@@ -1221,12 +1360,14 @@ git push -u origin main
 ```
 
 **2. Import to Vercel:**
+
 1. Login to https://vercel.com
 2. Click "New Project"
 3. Import your Git repository
 4. Vercel auto-detects Next.js configuration
 
 **3. Configure Environment Variables:**
+
 1. Go to Project Settings → Environment Variables
 2. Add:
    - `NEXT_PUBLIC_SUPABASE_URL`
@@ -1234,6 +1375,7 @@ git push -u origin main
 3. Set for Production, Preview, and Development
 
 **4. Deploy:**
+
 - Click "Deploy"
 - Wait for build to complete
 - Access via provided URL
@@ -1241,23 +1383,27 @@ git push -u origin main
 #### Method 2: Vercel CLI
 
 **1. Install Vercel CLI:**
+
 ```bash
 npm i -g vercel
 ```
 
 **2. Login and Link:**
+
 ```bash
 vercel login
 vercel link
 ```
 
 **3. Set Environment Variables:**
+
 ```bash
 vercel env add NEXT_PUBLIC_SUPABASE_URL
 vercel env add NEXT_PUBLIC_SUPABASE_ANON_KEY
 ```
 
 **4. Deploy:**
+
 ```bash
 vercel --prod
 ```
@@ -1266,12 +1412,13 @@ vercel --prod
 
 #### Required Variables
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| NEXT_PUBLIC_SUPABASE_URL | Supabase project URL | https://abc.supabase.co |
-| NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabase anonymous key | eyJhbGci... |
+| Variable                      | Description            | Example                 |
+| ----------------------------- | ---------------------- | ----------------------- |
+| NEXT_PUBLIC_SUPABASE_URL      | Supabase project URL   | https://abc.supabase.co |
+| NEXT_PUBLIC_SUPABASE_ANON_KEY | Supabase anonymous key | eyJhbGci...             |
 
 #### Security Notes
+
 - Never commit `.env.local` to version control
 - Use different keys for development and production
 - Rotate keys periodically
@@ -1307,11 +1454,13 @@ npm run test:coverage    # Run tests with coverage
 #### Configure DNS
 
 **For Root Domain (example.com):**
+
 - Type: A
 - Name: @
 - Value: 76.76.21.21
 
 **For Subdomain (www.example.com):**
+
 - Type: CNAME
 - Name: www
 - Value: cname.vercel-dns.com
@@ -1331,12 +1480,14 @@ npm run test:coverage    # Run tests with coverage
 #### Application Monitoring
 
 **Vercel Analytics:**
+
 - Page view tracking
 - Load time metrics
 - Error rate monitoring
 - Access via Vercel dashboard
 
 **Error Tracking:**
+
 - Browser console errors
 - API request failures
 - Authentication issues
@@ -1345,12 +1496,14 @@ npm run test:coverage    # Run tests with coverage
 #### Database Monitoring
 
 **Supabase Dashboard:**
+
 - Query performance
 - Connection count
 - Storage usage
 - Active connections
 
 **Key Metrics:**
+
 - Response times
 - Error rates
 - Database size
@@ -1361,12 +1514,14 @@ npm run test:coverage    # Run tests with coverage
 #### Database Backups
 
 **Automatic Backups (Supabase):**
+
 - Daily automatic backups
 - 7-day retention (free tier)
 - 30-day retention (pro tier)
 - Point-in-time recovery (pro tier)
 
 **Manual Backups:**
+
 ```bash
 # Via Supabase CLI
 supabase db dump -f backup.sql
@@ -1393,11 +1548,13 @@ pg_dump -h db.project.supabase.co -U postgres -d postgres > backup.sql
 #### Dependency Updates
 
 **Check for Updates:**
+
 ```bash
 npm outdated
 ```
 
 **Update Dependencies:**
+
 ```bash
 # Update all to latest minor/patch versions
 npm update
@@ -1410,6 +1567,7 @@ npm install package-name@latest
 ```
 
 **Testing After Updates:**
+
 1. Run in development: `npm run dev`
 2. Test all major features
 3. Run build: `npm run build`
@@ -1420,6 +1578,7 @@ npm install package-name@latest
 #### Application Updates
 
 **Development Workflow:**
+
 1. Create feature branch
 2. Implement changes
 3. Test locally
@@ -1429,6 +1588,7 @@ npm install package-name@latest
 7. Automatic deployment via Vercel
 
 **Rollback Procedure:**
+
 1. In Vercel dashboard, go to Deployments
 2. Find previous working deployment
 3. Click three dots → Promote to Production
@@ -1439,6 +1599,7 @@ npm install package-name@latest
 #### Frontend Scaling
 
 **Vercel Automatic Scaling:**
+
 - Automatic serverless scaling
 - Global CDN distribution
 - No configuration needed
@@ -1447,11 +1608,13 @@ npm install package-name@latest
 #### Database Scaling
 
 **Vertical Scaling (Supabase):**
+
 - Upgrade to larger compute instance
 - More CPU and RAM
 - Higher connection limits
 
 **Query Optimization:**
+
 - Add indexes for frequent queries
 - Optimize N+1 queries
 - Use connection pooling
@@ -1460,6 +1623,7 @@ npm install package-name@latest
 #### Storage Scaling
 
 **Supabase Storage:**
+
 - Scales automatically
 - Monitor storage usage
 - Implement file size limits
@@ -1470,16 +1634,19 @@ npm install package-name@latest
 #### Regular Security Tasks
 
 **Weekly:**
+
 - Review access logs
 - Check for failed login attempts
 - Monitor error rates
 
 **Monthly:**
+
 - Review user accounts
 - Check RLS policies
 - Update dependencies with security patches
 
 **Quarterly:**
+
 - Full security audit
 - Review authentication settings
 - Test backup restoration
@@ -1502,11 +1669,13 @@ npm install package-name@latest
 #### Issue: Environment Variables Not Working
 
 **Symptoms:**
+
 - "Invalid API key" errors
 - Can't connect to database
 - Blank page on load
 
 **Solutions:**
+
 1. Verify variables are prefixed with `NEXT_PUBLIC_`
 2. Check spelling and values in `.env.local`
 3. Restart development server after changes
@@ -1516,15 +1685,18 @@ npm install package-name@latest
 #### Issue: Patient Cannot See Any Data
 
 **Symptoms:**
+
 - "No Care Record Found" message
 - Empty dashboard for patient
 - Patient logged in successfully
 
 **Solutions:**
+
 1. Verify patient_email in care_recipients matches patient's login email
 2. Check that caregiver has added patient with correct email
 3. Verify RLS policies are enabled
 4. Check database for care_recipient record:
+
 ```sql
 SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 ```
@@ -1532,11 +1704,13 @@ SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 #### Issue: "Add Patient" Button Not Working
 
 **Symptoms:**
+
 - Opens update form instead of add form
 - Shows existing patient data in form
 - Cannot add new patient
 
 **Solutions:**
+
 1. This was a known bug (now fixed)
 2. Ensure selectedPatient state is cleared before opening form
 3. Call resetPatientForm() before setShowPatientForm(true)
@@ -1545,11 +1719,13 @@ SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 #### Issue: Authentication Errors
 
 **Symptoms:**
+
 - Cannot login
 - "Invalid credentials" errors
 - Redirect loops
 
 **Solutions:**
+
 1. Verify Supabase URL and anon key are correct
 2. Check that user exists in auth.users table
 3. Verify email is confirmed (if confirmation required)
@@ -1560,11 +1736,13 @@ SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 #### Issue: Database Connection Errors
 
 **Symptoms:**
+
 - "Failed to fetch" errors
 - Timeout errors
 - Empty data despite records existing
 
 **Solutions:**
+
 1. Verify Supabase project is active (not paused)
 2. Check internet connection
 3. Verify API keys are correct
@@ -1577,17 +1755,20 @@ SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 #### Browser Developer Tools
 
 **Console Tab:**
+
 - View JavaScript errors
 - Check API request/response
 - Monitor authentication state
 
 **Network Tab:**
+
 - Inspect API calls
 - Check request headers
 - View response data
 - Identify failed requests
 
 **Application Tab:**
+
 - Check localStorage
 - Inspect cookies
 - View session data
@@ -1595,32 +1776,36 @@ SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
 #### Database Diagnostics
 
 **Check RLS Status:**
+
 ```sql
-SELECT tablename, rowsecurity 
-FROM pg_tables 
+SELECT tablename, rowsecurity
+FROM pg_tables
 WHERE schemaname = 'public';
 ```
 
 **Check Policies:**
+
 ```sql
-SELECT tablename, policyname, cmd, qual 
-FROM pg_policies 
+SELECT tablename, policyname, cmd, qual
+FROM pg_policies
 WHERE schemaname = 'public';
 ```
 
 **Check User Data:**
+
 ```sql
 -- Find user by email
 SELECT * FROM auth.users WHERE email = 'user@example.com';
 
 -- Check user's care recipients
-SELECT cr.* 
+SELECT cr.*
 FROM care_recipients cr
 JOIN users u ON cr.caregiver_id = u.id
 WHERE u.email = 'caregiver@example.com';
 ```
 
 **Check Patient Access:**
+
 ```sql
 -- Verify patient linkage
 SELECT * FROM care_recipients WHERE patient_email = 'patient@example.com';
@@ -1636,21 +1821,25 @@ SELECT * FROM medical_records WHERE care_recipient_id IN (
 #### Slow Page Load
 
 **Possible Causes:**
+
 - Large number of records
 - Unoptimized queries
 - Missing indexes
 - Network latency
 
 **Solutions:**
+
 1. Implement pagination for large lists
 2. Add database indexes:
+
 ```sql
-CREATE INDEX idx_medical_records_care_recipient 
+CREATE INDEX idx_medical_records_care_recipient
 ON medical_records(care_recipient_id, date);
 
-CREATE INDEX idx_appointments_date 
+CREATE INDEX idx_appointments_date
 ON appointments(appointment_date);
 ```
+
 3. Use lazy loading for images/documents
 4. Optimize component re-renders
 5. Implement data caching
@@ -1658,15 +1847,17 @@ ON appointments(appointment_date);
 #### Slow Database Queries
 
 **Diagnosis:**
+
 ```sql
 -- Enable query timing
 EXPLAIN ANALYZE SELECT * FROM medical_records WHERE care_recipient_id = 'some-uuid';
 ```
 
 **Solutions:**
+
 1. Add appropriate indexes
 2. Limit result sets with LIMIT
-3. Use specific column selections instead of SELECT *
+3. Use specific column selections instead of SELECT \*
 4. Implement pagination
 5. Consider materialized views for complex queries
 
@@ -1675,9 +1866,11 @@ EXPLAIN ANALYZE SELECT * FROM medical_records WHERE care_recipient_id = 'some-uu
 ## 18. Version History
 
 ### Version 2.0 - Full Feature Release
+
 **Release Date:** January 2025
 
 **Major Features:**
+
 - Complete patient management system
 - Calendar and timeline views
 - Smart input with autocomplete
@@ -1686,6 +1879,7 @@ EXPLAIN ANALYZE SELECT * FROM medical_records WHERE care_recipient_id = 'some-uu
 - Comprehensive documentation
 
 **Improvements:**
+
 - Responsive design optimizations
 - Enhanced data visualization
 - Improved navigation structure
@@ -1693,15 +1887,18 @@ EXPLAIN ANALYZE SELECT * FROM medical_records WHERE care_recipient_id = 'some-uu
 - Consolidated documentation
 
 **Bug Fixes:**
+
 - Fixed "Add Patient" button calling update instead of add
 - Resolved patient dropdown visibility issues
 - Fixed syntax errors in login page
 - Added missing service layer methods
 
 ### Version 1.5 - Search & Filter Update
+
 **Release Date:** December 2024
 
 **New Features:**
+
 - Patient list page with grid layout
 - Search functionality for patients
 - Medication search and filter
@@ -1710,14 +1907,17 @@ EXPLAIN ANALYZE SELECT * FROM medical_records WHERE care_recipient_id = 'some-uu
 - Clear filters functionality
 
 **Improvements:**
+
 - Real-time filtering
 - Result counters
 - Empty state messages
 
 ### Version 1.0 - Initial Release
+
 **Release Date:** November 2024
 
 **Core Features:**
+
 - User authentication with role-based access
 - Basic dashboard with CRUD operations
 - Care recipient architecture
@@ -1863,6 +2063,7 @@ Currently, CareVault does not implement custom keyboard shortcuts. Standard brow
 - **Ctrl/Cmd + P:** Print Emergency Summary
 
 Future versions may include:
+
 - Quick navigation shortcuts
 - Search activation shortcut
 - Patient switching shortcut
@@ -1904,6 +2105,7 @@ Future versions may include:
 ### Technical Support
 
 For technical issues:
+
 1. Check Troubleshooting Guide (Section 17)
 2. Review browser console for errors
 3. Check Supabase project status
@@ -1912,6 +2114,7 @@ For technical issues:
 ### Contributing
 
 To contribute to CareVault:
+
 1. Fork the repository
 2. Create feature branch
 3. Implement changes with tests
@@ -1922,4 +2125,4 @@ To contribute to CareVault:
 
 **End of Documentation**
 
-*This document is maintained alongside the CareVault application and should be updated with each major release.*
+_This document is maintained alongside the CareVault application and should be updated with each major release._

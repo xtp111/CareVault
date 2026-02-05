@@ -7,6 +7,7 @@ This document provides comprehensive guidance for developing the frontend of the
 ## 2. Project Structure
 
 ### 2.1 Directory Structure
+
 ```
 app/                    # Next.js App Router pages
 ├── calendar/           # Calendar page
@@ -60,6 +61,7 @@ test-screenshots/       # Test screenshots
 ## 3. Technology Stack
 
 ### 3.1 Core Technologies
+
 - **Framework**: Next.js 14 (App Router)
 - **Language**: TypeScript
 - **Styling**: Tailwind CSS
@@ -69,6 +71,7 @@ test-screenshots/       # Test screenshots
 - **Data Fetching**: Supabase client library
 
 ### 3.2 Component Libraries
+
 - **Radix UI**: Low-level primitives for accessible components
 - **Lucide React**: Beautiful icon library
 - **Custom UI Components**: Located in `components/ui/`
@@ -76,159 +79,158 @@ test-screenshots/       # Test screenshots
 ## 4. Development Patterns
 
 ### 4.1 Authentication Flow
+
 The application uses a protected route pattern:
 
 ```tsx
 // In layout.tsx
-<AuthProvider>
-  {children}
-</AuthProvider>
+<AuthProvider>{children}</AuthProvider>;
 
 // In pages requiring authentication
-import { ProtectedRoute } from '@/contexts/AuthContext'
+import { ProtectedRoute } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
-  return (
-    <ProtectedRoute>
-      {/* Protected content */}
-    </ProtectedRoute>
-  )
+  return <ProtectedRoute>{/* Protected content */}</ProtectedRoute>;
 }
 ```
 
 ### 4.2 Context Usage
+
 The AuthContext provides authentication state throughout the application:
 
 ```tsx
-import { useAuth } from '@/contexts/AuthContext'
+import { useAuth } from '@/contexts/AuthContext';
 
 function MyComponent() {
-  const { user, userProfile, userRole, loading } = useAuth()
-  
+  const { user, userProfile, userRole, loading } = useAuth();
+
   // Use auth information
-  if (loading) return <LoadingSpinner />
-  if (!user) return <LoginForm />
-  
-  return <div>Dashboard content</div>
+  if (loading) return <LoadingSpinner />;
+  if (!user) return <LoginForm />;
+
+  return <div>Dashboard content</div>;
 }
 ```
 
 ### 4.3 Permission Checks
+
 Permissions are managed through the usePermissions hook:
 
 ```tsx
-import { usePermissions } from '@/hooks/usePermissions'
+import { usePermissions } from '@/hooks/usePermissions';
 
 function MyComponent() {
-  const permissions = usePermissions()
-  
+  const permissions = usePermissions();
+
   return (
     <div>
-      {permissions.hasPermission('canManageAppointments') && (
-        <button>Add Appointment</button>
-      )}
+      {permissions.hasPermission('canManageAppointments') && <button>Add Appointment</button>}
     </div>
-  )
+  );
 }
 ```
 
 ## 5. Component Architecture
 
 ### 5.1 UI Components
+
 Located in `components/ui/`, these follow the shadcn/ui pattern:
 
 ```tsx
 // Example button.tsx
-import * as React from "react"
-import { cn } from "@/lib/utils"
+import * as React from 'react';
+import { cn } from '@/lib/utils';
 
-export interface ButtonProps
-  extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {}
 
-const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <button
-        className={cn(
-          "inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors",
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    )
-  }
-)
+const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(({ className, ...props }, ref) => {
+  return (
+    <button
+      className={cn(
+        'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors',
+        className
+      )}
+      ref={ref}
+      {...props}
+    />
+  );
+});
 ```
 
 ### 5.2 Business Logic Components
+
 Business-specific components like `EmergencySummary.tsx` implement specific functionality:
 
 ```tsx
 // Example structure
 function EmergencySummary({ patientId }: { patientId: string }) {
   // Component logic here
-  return <div>Emergency summary content</div>
+  return <div>Emergency summary content</div>;
 }
 ```
 
 ## 6. Data Management
 
 ### 6.1 Service Layer Pattern
+
 The application uses a service layer pattern in `lib/supabase-service.ts`:
 
 ```tsx
 // Example service
 export const careRecipientService = {
   async getCareRecipientsByCaregiver(caregiverId: string): Promise<CareRecipient[]> {
-    if (!supabase) return []
+    if (!supabase) return [];
     const { data, error } = await supabase
       .from('care_recipients')
       .select('*')
       .eq('caregiver_id', caregiverId)
       .eq('is_active', true)
-      .order('created_at', { ascending: false })
-    return error ? [] : data
+      .order('created_at', { ascending: false });
+    return error ? [] : data;
   },
-  
-  async createCareRecipient(careRecipient: Omit<CareRecipient, 'id' | 'created_at' | 'updated_at'>): Promise<string> {
-    if (!supabase) throw new Error('Supabase not initialized')
-    
+
+  async createCareRecipient(
+    careRecipient: Omit<CareRecipient, 'id' | 'created_at' | 'updated_at'>
+  ): Promise<string> {
+    if (!supabase) throw new Error('Supabase not initialized');
+
     const { data, error } = await supabase
       .from('care_recipients')
       .insert({
         ...careRecipient,
         created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .select()
-      .single()
-    
-    if (error) throw error
-    return data.id
-  }
-}
+      .single();
+
+    if (error) throw error;
+    return data.id;
+  },
+};
 ```
 
 ### 6.2 State Management
+
 Components manage state using React hooks:
 
 ```tsx
 function DashboardComponent() {
-  const [patients, setPatients] = useState<CareRecipient[]>([])
-  const [selectedPatient, setSelectedPatient] = useState<CareRecipient | null>(null)
-  const [medications, setMedications] = useState<MedicalRecord[]>([])
-  
+  const [patients, setPatients] = useState<CareRecipient[]>([]);
+  const [selectedPatient, setSelectedPatient] = useState<CareRecipient | null>(null);
+  const [medications, setMedications] = useState<MedicalRecord[]>([]);
+
   useEffect(() => {
     // Load data when component mounts
-    loadPatientData()
-  }, [selectedPatient])
+    loadPatientData();
+  }, [selectedPatient]);
 }
 ```
 
 ## 7. Styling Guidelines
 
 ### 7.1 Tailwind CSS
+
 The application uses Tailwind CSS for styling with a utility-first approach:
 
 ```tsx
@@ -245,6 +247,7 @@ The application uses Tailwind CSS for styling with a utility-first approach:
 ```
 
 ### 7.2 Responsive Design
+
 All components are designed to be responsive:
 
 ```tsx
@@ -257,6 +260,7 @@ All components are designed to be responsive:
 ## 8. Forms and User Input
 
 ### 8.1 Form Handling
+
 Forms use controlled components with validation:
 
 ```tsx
@@ -265,109 +269,111 @@ const [patientForm, setPatientForm] = useState({
   last_name: '',
   date_of_birth: '',
   diagnosis: '',
-  allergies: ''
-})
+  allergies: '',
+});
 
 const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-  const { name, value } = e.target
-  setPatientForm(prev => ({
+  const { name, value } = e.target;
+  setPatientForm((prev) => ({
     ...prev,
-    [name]: value
-  }))
-}
+    [name]: value,
+  }));
+};
 ```
 
 ### 8.2 File Uploads
+
 Document uploads use the Supabase storage service:
 
 ```tsx
 const handleUploadDocument = async () => {
-  if (!selectedPatient || !selectedFile) return
+  if (!selectedPatient || !selectedFile) return;
 
   try {
     await documentService.uploadDocument(selectedFile, selectedPatient.id, {
       name: documentForm.name,
       category: documentForm.category,
-      description: documentForm.date
-    })
+      description: documentForm.date,
+    });
   } catch (error) {
-    console.error('Error uploading document:', error)
+    console.error('Error uploading document:', error);
   }
-}
+};
 ```
 
 ## 9. Error Handling
 
 ### 9.1 API Error Handling
+
 API calls include proper error handling:
 
 ```tsx
 try {
-  const patientId = await careRecipientService.createCareRecipient(patientData)
+  const patientId = await careRecipientService.createCareRecipient(patientData);
   // Success handling
 } catch (error: any) {
-  console.error('Error adding patient:', error)
-  const errorMessage = error?.message || error?.error_description || 'Failed to add patient'
-  alert(`Failed to add patient: ${errorMessage}`)
+  console.error('Error adding patient:', error);
+  const errorMessage = error?.message || error?.error_description || 'Failed to add patient';
+  alert(`Failed to add patient: ${errorMessage}`);
 }
 ```
 
 ### 9.2 Loading States
+
 Components implement loading states for better UX:
 
 ```tsx
-const [loading, setLoading] = useState(false)
+const [loading, setLoading] = useState(false);
 
 const handleSubmit = async () => {
-  setLoading(true)
+  setLoading(true);
   try {
     // API call
   } finally {
-    setLoading(false)
+    setLoading(false);
   }
-}
+};
 
-return (
-  <Button disabled={loading}>
-    {loading ? 'Processing...' : 'Submit'}
-  </Button>
-)
+return <Button disabled={loading}>{loading ? 'Processing...' : 'Submit'}</Button>;
 ```
 
 ## 10. Routing and Navigation
 
 ### 10.1 Next.js App Router
+
 The application uses the Next.js App Router for navigation:
 
 ```tsx
-import { useRouter } from 'next/navigation'
+import { useRouter } from 'next/navigation';
 
 function MyComponent() {
-  const router = useRouter()
-  
+  const router = useRouter();
+
   const handleNavigation = () => {
-    router.push('/dashboard')
-  }
+    router.push('/dashboard');
+  };
 }
 ```
 
 ### 10.2 Protected Routes
+
 Sensitive pages use the ProtectedRoute component:
 
 ```tsx
 // dashboard/page.tsx
-import { ProtectedRoute } from '@/contexts/AuthContext'
+import { ProtectedRoute } from '@/contexts/AuthContext';
 
 export default function DashboardPage() {
   return (
     <ProtectedRoute>
       <DashboardContent />
     </ProtectedRoute>
-  )
+  );
 }
 ```
 
 ## 11. Internationalization (i18n)
+
 The application is set up for internationalization:
 
 ```tsx
@@ -380,6 +386,7 @@ Future enhancements will include language switching capabilities.
 ## 12. Accessibility
 
 ### 12.1 ARIA Labels
+
 Components include proper ARIA attributes:
 
 ```tsx
@@ -389,14 +396,15 @@ Components include proper ARIA attributes:
 ```
 
 ### 12.2 Keyboard Navigation
+
 Interactive elements support keyboard navigation:
 
 ```tsx
-<button 
+<button
   tabIndex={0}
   onKeyDown={(e) => {
     if (e.key === 'Enter' || e.key === ' ') {
-      handleClick()
+      handleClick();
     }
   }}
 >
@@ -407,35 +415,33 @@ Interactive elements support keyboard navigation:
 ## 13. Performance Optimization
 
 ### 13.1 Code Splitting
+
 Next.js automatically handles code splitting for routes.
 
 ### 13.2 Image Optimization
+
 Use Next.js Image component for optimization:
 
 ```tsx
-import Image from 'next/image'
+import Image from 'next/image';
 
-<Image 
-  src="/profile.jpg" 
-  alt="Profile picture"
-  width={200}
-  height={200}
-  priority
-/>
+<Image src="/profile.jpg" alt="Profile picture" width={200} height={200} priority />;
 ```
 
 ### 13.3 Memoization
+
 Use React.memo for performance:
 
 ```tsx
 const ExpensiveComponent = React.memo(({ data }) => {
   // Component logic
-})
+});
 ```
 
 ## 14. Testing Considerations
 
 ### 14.1 Component Testing
+
 Components should be testable with React Testing Library:
 
 ```tsx
@@ -443,11 +449,12 @@ Components should be testable with React Testing Library:
 describe('Dashboard Component', () => {
   it('renders patient information correctly', () => {
     // Test implementation
-  })
-})
+  });
+});
 ```
 
 ### 14.2 Mocking API Calls
+
 API calls should be easily mockable for testing:
 
 ```tsx
@@ -455,29 +462,33 @@ API calls should be easily mockable for testing:
 export const patientService = {
   getPatients: async () => {
     // API call implementation
-  }
-}
+  },
+};
 ```
 
 ## 15. Best Practices
 
 ### 15.1 TypeScript Usage
+
 - Use strict typing throughout the application
 - Define clear interfaces for props and state
 - Use discriminated unions for complex types
 
 ### 15.2 Component Design
+
 - Keep components small and focused
 - Follow the single responsibility principle
 - Use composition over inheritance
 
 ### 15.3 Naming Conventions
+
 - Use PascalCase for components
 - Use camelCase for functions and variables
 - Use kebab-case for filenames
 - Use descriptive names that reflect purpose
 
 ### 15.4 Code Organization
+
 - Group related functionality together
 - Separate concerns appropriately
 - Maintain consistent folder structure
@@ -486,11 +497,13 @@ export const patientService = {
 ## 16. Security Considerations
 
 ### 16.1 Input Sanitization
+
 - Validate all user inputs
 - Sanitize data before displaying
 - Use proper encoding to prevent XSS
 
 ### 16.2 Authorization Checks
+
 - Perform permission checks on all sensitive operations
 - Never rely solely on UI hiding for security
 - Validate permissions on the backend as well
@@ -498,30 +511,37 @@ export const patientService = {
 ## 17. Future Enhancements
 
 ### 17.1 Progressive Web App (PWA)
+
 Consider implementing PWA features for offline capabilities.
 
 ### 17.2 Internationalization
+
 Add multi-language support beyond the current Chinese implementation.
 
 ### 17.3 Accessibility Improvements
+
 Continue enhancing accessibility features to meet WCAG standards.
 
 ### 17.4 Performance Monitoring
+
 Implement performance monitoring tools to track metrics.
 
 ## 18. Troubleshooting Common Issues
 
 ### 18.1 Authentication Issues
+
 - Ensure Supabase is properly configured in environment variables
 - Check that RLS policies are correctly set up
 - Verify that user sessions are properly maintained
 
 ### 18.2 Data Loading Problems
+
 - Verify that service functions are properly awaited
 - Check that error handling is implemented correctly
 - Ensure proper loading states are shown to users
 
 ### 18.3 Styling Issues
+
 - Use Tailwind's responsive prefixes for mobile compatibility
 - Check that CSS custom properties are properly defined
 - Verify that component classes are not conflicting

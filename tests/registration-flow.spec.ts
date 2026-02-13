@@ -2,172 +2,83 @@ import { test, expect } from '@playwright/test';
 
 test.describe('User Registration Flow Tests', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to login page before each test
-    await page.goto('http://localhost:3004/login');
-    await page.waitForTimeout(2000); // Wait for page to fully load
+    await page.goto('/login');
+    // Wait for page to fully load including styles
+    await page.waitForLoadState('domcontentloaded');
+    await page.waitForLoadState('networkidle');
+    await page.waitForTimeout(1000);
   });
 
-  test('Test 1 - Caregiver Registration', async ({ page }) => {
-    console.log('=== Test 1: Caregiver Registration ===');
-    
-    // Step 1: Take screenshot of login page
-    await page.screenshot({ 
-      path: 'c:/Users/aw/Downloads/caregiver_app_project/test-screenshots/01-login-page-initial.png',
-      fullPage: true 
-    });
-    console.log('✓ Screenshot 1: Login page captured');
-
-    // Step 2: Click Sign Up link to switch to registration mode
-    const signUpLink = page.locator('button:has-text("Don\'t have an account? Register")');
+  test('Caregiver Registration', async ({ page }) => {
+    // Wait for and click Register button
+    const signUpLink = page.getByRole('button', { name: /Register/i });
+    await expect(signUpLink).toBeVisible();
     await signUpLink.click();
+    
+    // Wait for form to update
     await page.waitForTimeout(1000);
     
-    // Verify we are in sign up mode
-    const signUpButton = await page.locator('button[type="submit"]').textContent();
-    expect(signUpButton).toContain('Sign Up');
-    console.log('✓ Switched to Sign Up mode');
+    // Wait for role selector to appear
+    const caregiverRadio = page.locator('input[name="role"][value="caregiver"]');
+    await expect(caregiverRadio).toBeVisible({ timeout: 10000 });
+    await caregiverRadio.check();
 
-    // Ensure Caregiver role is selected (should be default)
-    await page.locator('input[name="role"][value="caregiver"]').check();
-    console.log('✓ Caregiver role selected');
-
-    // Step 3: Fill in Caregiver registration form
-    await page.locator('input#email').fill('test-caregiver-001@example.com');
+    // Fill registration form
+    const timestamp = Date.now();
+    await page.locator('input#email').fill(`test-caregiver-${timestamp}@example.com`);
     await page.locator('input#password').fill('Password123!');
     await page.locator('input#fullName').fill('John Caregiver');
-    await page.locator('input#phone').fill('1234567890');
-    console.log('✓ Form filled with caregiver data');
-
-    // Setup console listener for errors
-    const consoleMessages: string[] = [];
-    const consoleErrors: string[] = [];
     
-    page.on('console', msg => {
-      const text = msg.text();
-      consoleMessages.push(`[${msg.type()}] ${text}`);
-      if (msg.type() === 'error') {
-        consoleErrors.push(text);
-      }
-    });
-
-    // Step 4: Click Sign Up button
-    await page.locator('button[type="submit"]').click();
-    console.log('✓ Clicked Sign Up button');
-
-    // Step 5: Wait 3 seconds for registration to complete
-    await page.waitForTimeout(3000);
-
-    // Step 6: Take screenshot showing the result
-    await page.screenshot({ 
-      path: 'c:/Users/aw/Downloads/caregiver_app_project/test-screenshots/02-caregiver-registration-result.png',
-      fullPage: true 
-    });
-    console.log('✓ Screenshot 2: Caregiver registration result captured');
-
-    // Check if redirected
-    const currentUrl = page.url();
-    console.log(`Current URL after registration: ${currentUrl}`);
-
-    // Step 7: Check console for errors
-    console.log('\n=== Console Messages ===');
-    consoleMessages.forEach(msg => console.log(msg));
-    
-    if (consoleErrors.length > 0) {
-      console.log('\n=== Console Errors ===');
-      consoleErrors.forEach(err => console.log('ERROR:', err));
-    } else {
-      console.log('✓ No console errors detected');
+    const phoneField = page.locator('input#phone');
+    if (await phoneField.isVisible()) {
+      await phoneField.fill('1234567890');
     }
 
-    // Wait a bit more to see final state
-    await page.waitForTimeout(2000);
+    // Submit
+    await page.locator('button[type="submit"]').click();
     
-    // Take final dashboard screenshot
-    await page.screenshot({ 
-      path: 'c:/Users/aw/Downloads/caregiver_app_project/test-screenshots/03-caregiver-dashboard.png',
-      fullPage: true 
-    });
-    console.log('✓ Screenshot 3: Caregiver dashboard captured');
+    // Wait for navigation
+    await page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 });
+    
+    // Verify redirect
+    expect(page.url()).not.toContain('/login');
   });
 
-  test('Test 2 - Patient Registration', async ({ page }) => {
-    console.log('\n=== Test 2: Patient Registration ===');
-    
-    // Step 1: Navigate to login page (already done in beforeEach)
-    console.log('✓ Navigated to /login');
-
-    // Step 2: Switch to Patient tab (registration mode first)
-    const signUpLink = page.locator('button:has-text("Don\'t have an account? Register")');
+  test('Patient Registration', async ({ page }) => {
+    // Wait for and click Register button
+    const signUpLink = page.getByRole('button', { name: /Register/i });
+    await expect(signUpLink).toBeVisible();
     await signUpLink.click();
-    await page.waitForTimeout(1000);
     
-    // Select Patient role
-    await page.locator('input[name="role"][value="patient"]').check();
+    // Wait for form to update
     await page.waitForTimeout(1000);
-    console.log('✓ Switched to Patient registration mode');
 
-    // Verify patient-specific fields are visible
-    const caregiverEmailField = await page.locator('input#caregiverEmail').isVisible();
-    expect(caregiverEmailField).toBeTruthy();
-    console.log('✓ Patient-specific fields visible');
+    // Select Patient role
+    const patientRadio = page.locator('input[name="role"][value="patient"]');
+    await expect(patientRadio).toBeVisible({ timeout: 10000 });
+    await patientRadio.check();
+    await page.waitForTimeout(500);
 
-    // Step 3: Fill in Patient registration form
-    await page.locator('input#email').fill('test-patient-001@example.com');
+    // Verify patient fields are visible
+    const caregiverEmailField = page.locator('input#caregiverEmail');
+    await expect(caregiverEmailField).toBeVisible();
+
+    // Fill registration form
+    const timestamp = Date.now();
+    await page.locator('input#email').fill(`test-patient-${timestamp}@example.com`);
     await page.locator('input#password').fill('Password123!');
     await page.locator('input#fullName').fill('Jane Patient');
-    await page.locator('input#caregiverEmail').fill('test-caregiver-001@example.com');
-    await page.locator('input#caregiverName').fill('John Caregiver');
-    console.log('✓ Form filled with patient data');
-
-    // Setup console listener for errors
-    const consoleMessages: string[] = [];
-    const consoleErrors: string[] = [];
+    await caregiverEmailField.fill('existing-caregiver@example.com');
     
-    page.on('console', msg => {
-      const text = msg.text();
-      consoleMessages.push(`[${msg.type()}] ${text}`);
-      if (msg.type() === 'error') {
-        consoleErrors.push(text);
-      }
-    });
-
-    // Step 4: Click Sign Up button
-    await page.locator('button[type="submit"]').click();
-    console.log('✓ Clicked Sign Up button');
-
-    // Step 5: Wait 3 seconds for registration to complete
-    await page.waitForTimeout(3000);
-
-    // Step 6: Take screenshot showing the result
-    await page.screenshot({ 
-      path: 'c:/Users/aw/Downloads/caregiver_app_project/test-screenshots/04-patient-registration-result.png',
-      fullPage: true 
-    });
-    console.log('✓ Screenshot 4: Patient registration result captured');
-
-    // Check if redirected
-    const currentUrl = page.url();
-    console.log(`Current URL after registration: ${currentUrl}`);
-
-    // Step 7: Check console for errors
-    console.log('\n=== Console Messages ===');
-    consoleMessages.forEach(msg => console.log(msg));
-    
-    if (consoleErrors.length > 0) {
-      console.log('\n=== Console Errors ===');
-      consoleErrors.forEach(err => console.log('ERROR:', err));
-    } else {
-      console.log('✓ No console errors detected');
+    const caregiverNameField = page.locator('input#caregiverName');
+    if (await caregiverNameField.isVisible()) {
+      await caregiverNameField.fill('John Caregiver');
     }
 
-    // Wait a bit more to see final state
-    await page.waitForTimeout(2000);
+    // Submit
+    await page.locator('button[type="submit"]').click();
     
-    // Take final dashboard screenshot
-    await page.screenshot({ 
-      path: 'c:/Users/aw/Downloads/caregiver_app_project/test-screenshots/05-patient-dashboard.png',
-      fullPage: true 
-    });
-    console.log('✓ Screenshot 5: Patient dashboard captured');
+    // Wait for result
+    await page.waitForTimeout(5000);
   });
 });

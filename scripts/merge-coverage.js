@@ -9,8 +9,8 @@ const combinedDir = path.join(coverageDir, 'combined');
 
 const coverageMap = libCoverage.createCoverageMap({});
 
-// Collect coverage files from unit and combinatorial directories
-const sources = ['unit', 'combinatorial'];
+// Collect coverage files from all test directories
+const sources = ['unit', 'usecase', 'state-transition', 'combinatorial'];
 
 for (const source of sources) {
   const coverageFile = path.join(coverageDir, source, 'coverage-final.json');

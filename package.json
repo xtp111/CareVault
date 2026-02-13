@@ -9,14 +9,16 @@
     "lint": "next lint",
     "test": "jest",
     "test:unit": "jest --coverage --coverageDirectory=coverage/unit __tests__/unit",
+    "test:usecase": "jest --coverage --coverageDirectory=coverage/usecase __tests__/usecase",
+    "test:state-transition": "jest --coverage --coverageDirectory=coverage/state-transition __tests__/state-transition",
     "test:combinatorial": "jest --coverage --coverageDirectory=coverage/combinatorial __tests__/combinatorial",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
-    "test:all": "npm run test:unit && npm run test:combinatorial && npm run test:e2e",
+    "test:all": "npm run test:unit && npm run test:usecase && npm run test:state-transition && npm run test:combinatorial && npm run test:e2e",
     "coverage:merge": "node scripts/merge-coverage.js",
-    "coverage:all": "npm run test:unit && npm run test:combinatorial && npm run coverage:merge"
+    "coverage:all": "npm run test:unit && npm run test:usecase && npm run test:state-transition && npm run test:combinatorial && npm run coverage:merge"
   },
   "dependencies": {
     "@radix-ui/react-select": "^2.2.6",

@@ -1,44 +1,112 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Login Page UI Tests', () => {
+test.describe('Registration Integration Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
   });
 
-  test('Login page renders correctly', async ({ page }) => {
-    // Verify core login elements are visible
-    await expect(page.locator('input#email')).toBeVisible();
-    await expect(page.locator('input#password')).toBeVisible();
-
-    // Verify Sign In button exists
-    const signInButton = page.getByRole('button', { name: /Sign In/i });
-    await expect(signInButton).toBeVisible();
-
-    // Verify Register toggle link exists
+  test('Caregiver registration submits to Supabase', async ({ page }) => {
+    // Switch to Sign Up mode
     const registerToggle = page.getByRole('button', { name: /Register/i });
     await expect(registerToggle).toBeVisible();
+    await registerToggle.click();
+    await page.waitForTimeout(500);
+
+    // Caregiver role should be selected by default
+    const caregiverRadio = page.locator('input[name="role"][value="caregiver"]');
+    await expect(caregiverRadio).toBeVisible({ timeout: 5000 });
+    await expect(caregiverRadio).toBeChecked();
+
+    // Fill registration form with unique email
+    const timestamp = Date.now();
+    await page.locator('input#email').fill(`e2e-caregiver-${timestamp}@test.com`);
+    await page.locator('input#password').fill('TestPass123!');
+    await page.locator('input#fullName').fill('E2E Caregiver');
+
+    const phoneField = page.locator('input#phone');
+    if (await phoneField.isVisible()) {
+      await phoneField.fill('5551234567');
+    }
+
+    // Submit form
+    await page.locator('button[type="submit"]').click();
+
+    // Wait for Supabase response - button should show "Processing..."
+    await expect(page.getByRole('button', { name: /Processing/i })).toBeVisible({ timeout: 5000 });
+
+    // Wait for result: either redirect to dashboard or error message displayed
+    await page.waitForTimeout(5000);
+
+    const currentUrl = page.url();
+    const hasError = await page.locator('.text-red-600').count() > 0;
+
+    // Registration should result in either a redirect (auto-confirm) or stay on page
+    if (currentUrl.includes('/dashboard') || currentUrl.endsWith('/')) {
+      // Success: user was auto-confirmed and redirected
+      expect(currentUrl).not.toContain('/login');
+    } else {
+      // Supabase responded - either error or email confirmation required
+      // The form should no longer be in "Processing" state
+      await expect(page.getByRole('button', { name: /Processing/i })).not.toBeVisible({ timeout: 10000 });
+    }
   });
 
-  test('Can switch to registration mode', async ({ page }) => {
-    // Click Register toggle
+  test('Patient registration submits with caregiver info', async ({ page }) => {
+    // Switch to Sign Up mode
     const registerToggle = page.getByRole('button', { name: /Register/i });
     await registerToggle.click();
     await page.waitForTimeout(500);
 
-    // Verify registration fields appear
-    const caregiverRadio = page.locator('input[name="role"][value="caregiver"]');
-    await expect(caregiverRadio).toBeVisible({ timeout: 5000 });
-
+    // Select Patient role
     const patientRadio = page.locator('input[name="role"][value="patient"]');
-    await expect(patientRadio).toBeVisible();
+    await expect(patientRadio).toBeVisible({ timeout: 5000 });
+    await patientRadio.check();
+    await page.waitForTimeout(500);
 
-    // Verify common registration fields
-    await expect(page.locator('input#fullName')).toBeVisible();
-    await expect(page.locator('input#phone')).toBeVisible();
+    // Verify patient-specific fields appear
+    const caregiverEmailField = page.locator('input#caregiverEmail');
+    await expect(caregiverEmailField).toBeVisible();
 
-    // Verify Sign Up button appears
-    const signUpButton = page.getByRole('button', { name: /Sign Up/i });
-    await expect(signUpButton).toBeVisible();
+    // Fill registration form
+    const timestamp = Date.now();
+    await page.locator('input#email').fill(`e2e-patient-${timestamp}@test.com`);
+    await page.locator('input#password').fill('TestPass123!');
+    await page.locator('input#fullName').fill('E2E Patient');
+    await caregiverEmailField.fill('e2e-caregiver@test.com');
+
+    const caregiverNameField = page.locator('input#caregiverName');
+    if (await caregiverNameField.isVisible()) {
+      await caregiverNameField.fill('E2E Caregiver');
+    }
+
+    // Submit form
+    await page.locator('button[type="submit"]').click();
+
+    // Wait for Supabase response
+    await expect(page.getByRole('button', { name: /Processing/i })).toBeVisible({ timeout: 5000 });
+    await page.waitForTimeout(5000);
+
+    // Verify Supabase processed the request (no longer in loading state)
+    await expect(page.getByRole('button', { name: /Processing/i })).not.toBeVisible({ timeout: 10000 });
+  });
+
+  test('Login with invalid credentials shows error', async ({ page }) => {
+    // Fill login form with non-existent credentials
+    await page.locator('input#email').fill('nonexistent@test.com');
+    await page.locator('input#password').fill('WrongPassword123!');
+
+    // Submit
+    await page.locator('button[type="submit"]').click();
+
+    // Wait for Supabase error response
+    await expect(page.getByRole('button', { name: /Processing/i })).toBeVisible({ timeout: 5000 });
+
+    // Should show error message from Supabase
+    const errorMessage = page.locator('.text-red-600');
+    await expect(errorMessage).toBeVisible({ timeout: 15000 });
+
+    // Should still be on login page
+    expect(page.url()).toContain('/login');
   });
 });

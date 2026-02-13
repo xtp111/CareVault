@@ -1,23 +1,33 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Registration Form UI Tests', () => {
+test.describe('Comprehensive Registration & Login Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
+  });
 
-    // Switch to registration mode
-    const registerToggle = page.getByRole('button', { name: /Register/i });
-    await registerToggle.click();
-    await page.waitForTimeout(500);
+  test('Login page renders all required elements', async ({ page }) => {
+    // Verify login form elements
+    await expect(page.locator('input#email')).toBeVisible();
+    await expect(page.locator('input#password')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
+    await expect(page.getByRole('button', { name: /Register/i })).toBeVisible();
+
+    // Verify branding
+    await expect(page.getByRole('heading', { name: 'Login to CareVault' })).toBeVisible();
   });
 
   test('Caregiver registration form shows correct fields', async ({ page }) => {
-    // Caregiver should be selected by default
+    // Switch to registration mode
+    await page.getByRole('button', { name: /Register/i }).click();
+    await page.waitForTimeout(500);
+
+    // Caregiver radio should be selected by default
     const caregiverRadio = page.locator('input[name="role"][value="caregiver"]');
     await expect(caregiverRadio).toBeVisible({ timeout: 5000 });
     await expect(caregiverRadio).toBeChecked();
 
-    // Verify common fields are visible
+    // Common fields visible
     await expect(page.locator('input#email')).toBeVisible();
     await expect(page.locator('input#password')).toBeVisible();
     await expect(page.locator('input#fullName')).toBeVisible();
@@ -26,18 +36,28 @@ test.describe('Registration Form UI Tests', () => {
     // Patient-specific fields should NOT be visible
     await expect(page.locator('input#caregiverEmail')).not.toBeVisible();
     await expect(page.locator('input#caregiverName')).not.toBeVisible();
+
+    // Submit button should say "Sign Up"
+    await expect(page.getByRole('button', { name: /Sign Up/i })).toBeVisible();
   });
 
-  test('Patient registration form shows caregiver fields', async ({ page }) => {
+  test('Patient registration form reveals caregiver fields', async ({ page }) => {
+    // Switch to registration mode
+    await page.getByRole('button', { name: /Register/i }).click();
+    await page.waitForTimeout(500);
+
     // Select Patient role
     const patientRadio = page.locator('input[name="role"][value="patient"]');
     await expect(patientRadio).toBeVisible({ timeout: 5000 });
     await patientRadio.check();
     await page.waitForTimeout(500);
 
-    // Verify patient-specific caregiver fields appear
+    // Patient-specific caregiver fields should now be visible
     await expect(page.locator('input#caregiverEmail')).toBeVisible();
     await expect(page.locator('input#caregiverName')).toBeVisible();
+
+    // "Link to Your Caregiver" section should be visible
+    await expect(page.getByText('Link to Your Caregiver')).toBeVisible();
 
     // Common fields should still be visible
     await expect(page.locator('input#email')).toBeVisible();
@@ -45,21 +65,25 @@ test.describe('Registration Form UI Tests', () => {
     await expect(page.locator('input#fullName')).toBeVisible();
   });
 
-  test('Can toggle back to sign in mode', async ({ page }) => {
-    // We are in registration mode from beforeEach
-    // Verify registration fields are visible
-    await expect(page.locator('input#fullName')).toBeVisible();
+  test('Toggle between Sign In and Register modes', async ({ page }) => {
+    // Initially in Sign In mode - no registration fields
+    await expect(page.locator('input#fullName')).not.toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
 
-    // Click "Already have an account? Sign In"
-    const signInToggle = page.getByRole('button', { name: /Sign In/i });
-    await signInToggle.click();
+    // Switch to Register mode
+    await page.getByRole('button', { name: /Register/i }).click();
+    await page.waitForTimeout(500);
+
+    // Registration fields should appear
+    await expect(page.locator('input#fullName')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign Up/i })).toBeVisible();
+
+    // Switch back to Sign In mode
+    await page.getByRole('button', { name: /Sign In/i }).click();
     await page.waitForTimeout(500);
 
     // Registration fields should disappear
     await expect(page.locator('input#fullName')).not.toBeVisible();
-
-    // Login fields should remain
-    await expect(page.locator('input#email')).toBeVisible();
-    await expect(page.locator('input#password')).toBeVisible();
+    await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
   });
 });

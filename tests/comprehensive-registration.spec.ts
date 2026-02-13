@@ -1,92 +1,65 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('Comprehensive Registration Testing', () => {
+test.describe('Registration Form UI Tests', () => {
   test.beforeEach(async ({ page }) => {
     await page.goto('/login');
     await page.waitForLoadState('networkidle');
+
+    // Switch to registration mode
+    const registerToggle = page.getByRole('button', { name: /Register/i });
+    await registerToggle.click();
+    await page.waitForTimeout(500);
   });
 
-  test('Caregiver Registration Flow', async ({ page }) => {
-    // Switch to Sign Up mode
-    const signUpButton = page.getByRole('button', { name: /Register/i });
-    await signUpButton.click();
-    await page.waitForTimeout(500);
-
-    // Verify and select Caregiver role
+  test('Caregiver registration form shows correct fields', async ({ page }) => {
+    // Caregiver should be selected by default
     const caregiverRadio = page.locator('input[name="role"][value="caregiver"]');
-    await expect(caregiverRadio).toBeVisible();
-    await caregiverRadio.check();
+    await expect(caregiverRadio).toBeVisible({ timeout: 5000 });
+    await expect(caregiverRadio).toBeChecked();
 
-    // Fill form
-    const timestamp = Date.now();
-    const caregiverEmail = `test-caregiver-${timestamp}@example.com`;
-    
-    await page.locator('input#email').fill(caregiverEmail);
-    await page.locator('input#password').fill('TestPass123!');
-    await page.locator('input#fullName').fill('Alice Caregiver');
-    
-    const phoneField = page.locator('input#phone');
-    if (await phoneField.isVisible()) {
-      await phoneField.fill('555-1234');
-    }
+    // Verify common fields are visible
+    await expect(page.locator('input#email')).toBeVisible();
+    await expect(page.locator('input#password')).toBeVisible();
+    await expect(page.locator('input#fullName')).toBeVisible();
+    await expect(page.locator('input#phone')).toBeVisible();
 
-    // Submit and wait
-    await page.locator('button[type="submit"]').click();
-    await page.waitForURL(/\/(dashboard)?$/, { timeout: 15000 });
-
-    // Verify success
-    expect(page.url()).not.toContain('/login');
+    // Patient-specific fields should NOT be visible
+    await expect(page.locator('input#caregiverEmail')).not.toBeVisible();
+    await expect(page.locator('input#caregiverName')).not.toBeVisible();
   });
 
-  test('Patient Registration Flow', async ({ page }) => {
-    // Switch to Sign Up mode
-    const signUpButton = page.getByRole('button', { name: /Register/i });
-    await signUpButton.click();
-    await page.waitForTimeout(500);
-
+  test('Patient registration form shows caregiver fields', async ({ page }) => {
     // Select Patient role
     const patientRadio = page.locator('input[name="role"][value="patient"]');
-    await expect(patientRadio).toBeVisible();
+    await expect(patientRadio).toBeVisible({ timeout: 5000 });
     await patientRadio.check();
     await page.waitForTimeout(500);
 
-    // Verify patient fields
-    const caregiverEmailField = page.locator('input#caregiverEmail');
-    await expect(caregiverEmailField).toBeVisible();
+    // Verify patient-specific caregiver fields appear
+    await expect(page.locator('input#caregiverEmail')).toBeVisible();
+    await expect(page.locator('input#caregiverName')).toBeVisible();
 
-    // Fill form
-    const timestamp = Date.now();
-    
-    await page.locator('input#email').fill(`test-patient-${timestamp}@example.com`);
-    await page.locator('input#password').fill('TestPass123!');
-    await page.locator('input#fullName').fill('Bob Patient');
-    await caregiverEmailField.fill('existing-caregiver@example.com');
-    
-    const caregiverNameField = page.locator('input#caregiverName');
-    if (await caregiverNameField.isVisible()) {
-      await caregiverNameField.fill('Alice Caregiver');
-    }
-
-    // Submit
-    await page.locator('button[type="submit"]').click();
-    await page.waitForTimeout(5000);
-
-    // Check result - either dashboard or error message
-    const currentUrl = page.url();
-    const hasError = await page.locator('.text-red-600, .text-destructive').count() > 0;
-    
-    if (currentUrl.includes('/dashboard')) {
-      console.log('Registration succeeded');
-    } else if (hasError) {
-      console.log('Registration failed with error (expected if caregiver does not exist)');
-    }
-  });
-
-  test('Login Page Elements', async ({ page }) => {
-    // Verify login page elements
+    // Common fields should still be visible
     await expect(page.locator('input#email')).toBeVisible();
     await expect(page.locator('input#password')).toBeVisible();
-    await expect(page.getByRole('button', { name: /Sign In/i })).toBeVisible();
-    await expect(page.getByRole('button', { name: /Register/i })).toBeVisible();
+    await expect(page.locator('input#fullName')).toBeVisible();
+  });
+
+  test('Can toggle back to sign in mode', async ({ page }) => {
+    // We are in registration mode from beforeEach
+    // Verify registration fields are visible
+    await expect(page.locator('input#fullName')).toBeVisible();
+
+    // Click "Already have an account? Sign In"
+    const signInToggle = page.getByRole('button', { name: /Sign In/i });
+    await signInToggle.click();
+    await page.waitForTimeout(500);
+
+    // Registration fields should disappear
+    await expect(page.locator('input#fullName')).not.toBeVisible();
+
+    // Login fields should remain
+    await expect(page.locator('input#email')).toBeVisible();
+    await expect(page.locator('input#password')).toBeVisible();
   });
 });

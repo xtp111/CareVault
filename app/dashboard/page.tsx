@@ -7,7 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit, Shield, LogOut, UserCircle } from 'lucide-react'
+import { FileText, Heart, Pill, User, Users, AlertCircle, FileCheck, Calendar, X, Trash2, Upload, Download, ExternalLink, Edit, Shield, LogOut, UserCircle, DollarSign, Phone, Clock } from 'lucide-react'
 import { ProtectedRoute, useAuth } from '@/contexts/AuthContext'
 import { usePermissions } from '@/hooks/usePermissions'
 import { supabase } from '@/lib/supabase'
@@ -24,10 +24,12 @@ import type {
   MedicalRecord,
   Appointment, 
   DocumentRecord,
+  EmergencyContact,
   AppointmentStatus
 } from '@/types/supabase'
 
 type DocumentCategory = 'legal' | 'medical' | 'financial' | 'identification'
+type ActiveSection = 'medications' | 'appointments' | 'documents' | 'careLogs' | 'financial' | 'contacts' | null
 
 function CaregiverDashboard() {
   const { user, userRole, userProfile } = useAuth()
@@ -40,21 +42,27 @@ function CaregiverDashboard() {
   const [careLogs, setCareLogs] = useState<MedicalRecord[]>([])
   const [appointments, setAppointments] = useState<Appointment[]>([])
   const [documents, setDocuments] = useState<DocumentRecord[]>([])
+  const [contacts, setContacts] = useState<EmergencyContact[]>([])
+  const [financialDocs, setFinancialDocs] = useState<DocumentRecord[]>([])
+  
+  const [activeSection, setActiveSection] = useState<ActiveSection>(null)
   
   const [showPatientForm, setShowPatientForm] = useState(false)
   const [showMedicationForm, setShowMedicationForm] = useState(false)
   const [showCareLogForm, setShowCareLogForm] = useState(false)
   const [showAppointmentForm, setShowAppointmentForm] = useState(false)
   const [showDocumentForm, setShowDocumentForm] = useState(false)
+  const [showContactForm, setShowContactForm] = useState(false)
+  const [showFinancialForm, setShowFinancialForm] = useState(false)
   const [showEmergencySummary, setShowEmergencySummary] = useState(false)
   const [showProfileModal, setShowProfileModal] = useState(false)
   
-  // Search and filter states
   const [medicationSearch, setMedicationSearch] = useState('')
   const [appointmentSearch, setAppointmentSearch] = useState('')
   
   const [uploadingFile, setUploadingFile] = useState(false)
   const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const [selectedFinancialFile, setSelectedFinancialFile] = useState<File | null>(null)
 
   const [patientForm, setPatientForm] = useState({
     patient_email: '',
@@ -69,7 +77,6 @@ function CaregiverDashboard() {
     emergency_contact_relationship: ''
   })
   
-  // Common diagnosis suggestions
   const commonDiagnoses = [
     'Alzheimer\'s Disease',
     'Dementia',
@@ -92,7 +99,6 @@ function CaregiverDashboard() {
     date: new Date().toISOString().split('T')[0]
   })
   
-  // Common medications
   const commonMedications = [
     'Aspirin',
     'Metformin',
@@ -133,20 +139,31 @@ function CaregiverDashboard() {
     date: new Date().toISOString().split('T')[0]
   })
 
+  const [contactForm, setContactForm] = useState({
+    name: '',
+    relationship: '',
+    phone: '',
+    email: '',
+    is_primary: false
+  })
+
+  const [financialForm, setFinancialForm] = useState({
+    name: '',
+    date: new Date().toISOString().split('T')[0]
+  })
+
   // Load patients on mount
   useEffect(() => {
     if (!user || !userProfile) return
     
     const loadPatients = async () => {
       if (permissions.isCaregiver) {
-        // Caregiver: Load all care recipients they manage
         const careRecipients = await careRecipientService.getCareRecipientsByCaregiver(user.id)
         setPatients(careRecipients)
         if (careRecipients.length > 0) {
           setSelectedPatient(careRecipients[0])
         }
       } else if (permissions.isPatient && userProfile.email) {
-        // Patient: Load their own care recipient record
         const careRecipient = await careRecipientService.getCareRecipientByEmail(userProfile.email)
         if (careRecipient) {
           setPatients([careRecipient])
@@ -163,17 +180,21 @@ function CaregiverDashboard() {
     if (!selectedPatient) return
 
     const loadPatientData = async () => {
-      const [meds, logs, appts, docs] = await Promise.all([
+      const [meds, logs, appts, docs, cts] = await Promise.all([
         medicalRecordService.getActiveMedications(selectedPatient.id),
         medicalRecordService.getMedicalRecords(selectedPatient.id),
         appointmentService.getAppointments(selectedPatient.id),
-        documentService.getDocuments(selectedPatient.id)
+        documentService.getDocuments(selectedPatient.id),
+        emergencyContactService.getEmergencyContacts(selectedPatient.id)
       ])
 
       setMedications(meds)
       setCareLogs(logs)
       setAppointments(appts)
-      setDocuments(docs)
+      // Split docs: financial vs non-financial
+      setDocuments(docs.filter(d => d.category !== 'financial'))
+      setFinancialDocs(docs.filter(d => d.category === 'financial'))
+      setContacts(cts)
     }
 
     loadPatientData()
@@ -425,9 +446,9 @@ function CaregiverDashboard() {
         description: documentForm.date
       })
 
-      // Reload documents
       const docs = await documentService.getDocuments(selectedPatient.id)
-      setDocuments(docs)
+      setDocuments(docs.filter(d => d.category !== 'financial'))
+      setFinancialDocs(docs.filter(d => d.category === 'financial'))
 
       setShowDocumentForm(false)
       resetDocumentForm()
@@ -446,9 +467,84 @@ function CaregiverDashboard() {
     try {
       await documentService.deleteDocument(id, fileUrl)
       setDocuments(documents.filter(d => d.id !== id))
+      setFinancialDocs(financialDocs.filter(d => d.id !== id))
     } catch (error) {
       console.error('Error deleting document:', error)
       alert('Failed to delete document')
+    }
+  }
+
+  // Contact Management
+  const handleAddContact = async () => {
+    if (!selectedPatient || !permissions.hasPermission('canManageContacts')) return
+
+    try {
+      const contactId = await emergencyContactService.createEmergencyContact({
+        care_recipient_id: selectedPatient.id,
+        name: contactForm.name,
+        relationship: contactForm.relationship || undefined,
+        phone: contactForm.phone || undefined,
+        email: contactForm.email || undefined,
+        is_primary: contactForm.is_primary
+      })
+
+      const newContact: EmergencyContact = {
+        id: contactId,
+        care_recipient_id: selectedPatient.id,
+        name: contactForm.name,
+        relationship: contactForm.relationship || undefined,
+        phone: contactForm.phone || undefined,
+        email: contactForm.email || undefined,
+        is_primary: contactForm.is_primary,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      }
+
+      setContacts([...contacts, newContact])
+      setShowContactForm(false)
+      resetContactForm()
+    } catch (error) {
+      console.error('Error adding contact:', error)
+      alert('Failed to add contact')
+    }
+  }
+
+  const handleDeleteContact = async (id: string) => {
+    if (!permissions.hasPermission('canManageContacts')) return
+
+    try {
+      await emergencyContactService.deleteEmergencyContact(id)
+      setContacts(contacts.filter(c => c.id !== id))
+    } catch (error) {
+      console.error('Error deleting contact:', error)
+      alert('Failed to delete contact')
+    }
+  }
+
+  // Financial Document Upload
+  const handleUploadFinancial = async () => {
+    if (!selectedPatient || !selectedFinancialFile || !permissions.hasPermission('canManageFinancials')) return
+
+    setUploadingFile(true)
+    try {
+      await documentService.uploadDocument(selectedFinancialFile, selectedPatient.id, {
+        name: financialForm.name,
+        category: 'financial',
+        description: financialForm.date
+      })
+
+      const docs = await documentService.getDocuments(selectedPatient.id)
+      setDocuments(docs.filter(d => d.category !== 'financial'))
+      setFinancialDocs(docs.filter(d => d.category === 'financial'))
+
+      setShowFinancialForm(false)
+      resetFinancialForm()
+      setSelectedFinancialFile(null)
+    } catch (error) {
+      console.error('Error uploading financial document:', error)
+      alert('Failed to upload financial document')
+    } finally {
+      setUploadingFile(false)
     }
   }
 
@@ -469,51 +565,39 @@ function CaregiverDashboard() {
   }
 
   const resetMedicationForm = () => {
-    setMedicationForm({
-      name: '',
-      details: '',
-      date: new Date().toISOString().split('T')[0]
-    })
+    setMedicationForm({ name: '', details: '', date: new Date().toISOString().split('T')[0] })
   }
 
   const resetCareLogForm = () => {
-    setCareLogForm({
-      name: '',
-      details: '',
-      date: new Date().toISOString().split('T')[0]
-    })
+    setCareLogForm({ name: '', details: '', date: new Date().toISOString().split('T')[0] })
   }
 
   const resetAppointmentForm = () => {
     setAppointmentForm({
-      title: '',
-      description: '',
+      title: '', description: '',
       appointmentDate: new Date(new Date().setHours(new Date().getHours() + 1)).toISOString().slice(0, 16),
-      location: '',
-      remindBeforeMinutes: 30,
-      repeatInterval: 'none'
+      location: '', remindBeforeMinutes: 30, repeatInterval: 'none'
     })
   }
 
   const resetDocumentForm = () => {
-    setDocumentForm({
-      name: '',
-      category: 'medical',
-      date: new Date().toISOString().split('T')[0]
-    })
+    setDocumentForm({ name: '', category: 'medical', date: new Date().toISOString().split('T')[0] })
+  }
+
+  const resetContactForm = () => {
+    setContactForm({ name: '', relationship: '', phone: '', email: '', is_primary: false })
+  }
+
+  const resetFinancialForm = () => {
+    setFinancialForm({ name: '', date: new Date().toISOString().split('T')[0] })
   }
 
   const upcomingAppointments = appointments
     .filter(a => a.status === 'scheduled' && new Date(a.appointment_date) > new Date())
     .sort((a, b) => new Date(a.appointment_date).getTime() - new Date(b.appointment_date).getTime())
 
-  const pastAppointments = appointments
-    .filter(a => a.status !== 'scheduled' || new Date(a.appointment_date) <= new Date())
-    .sort((a, b) => new Date(b.appointment_date).getTime() - new Date(a.appointment_date).getTime())
-
   const activeMedications = medications
   
-  // Filtered medications and appointments
   const filteredMedications = activeMedications.filter(med => 
     medicationSearch === '' || 
     med.title.toLowerCase().includes(medicationSearch.toLowerCase()) ||
@@ -551,6 +635,16 @@ function CaregiverDashboard() {
     const daysUntil = Math.floor(hoursUntil / 24)
     return `${daysUntil} day${daysUntil !== 1 ? 's' : ''}`
   }
+
+  // Section tile definitions with distinct colors
+  const sectionTiles = [
+    { id: 'medications' as ActiveSection, label: 'Medications', icon: Pill, count: activeMedications.length, bgColor: 'bg-blue-500', hoverColor: 'hover:bg-blue-600', lightBg: 'bg-blue-50', textColor: 'text-blue-700' },
+    { id: 'appointments' as ActiveSection, label: 'Appointments', icon: Calendar, count: upcomingAppointments.length, bgColor: 'bg-green-500', hoverColor: 'hover:bg-green-600', lightBg: 'bg-green-50', textColor: 'text-green-700' },
+    { id: 'documents' as ActiveSection, label: 'Documents', icon: FileText, count: documents.length, bgColor: 'bg-orange-500', hoverColor: 'hover:bg-orange-600', lightBg: 'bg-orange-50', textColor: 'text-orange-700' },
+    { id: 'careLogs' as ActiveSection, label: 'Care Logs', icon: Heart, count: careLogs.length, bgColor: 'bg-purple-500', hoverColor: 'hover:bg-purple-600', lightBg: 'bg-purple-50', textColor: 'text-purple-700' },
+    { id: 'financial' as ActiveSection, label: 'Financial', icon: DollarSign, count: financialDocs.length, bgColor: 'bg-teal-500', hoverColor: 'hover:bg-teal-600', lightBg: 'bg-teal-50', textColor: 'text-teal-700' },
+    { id: 'contacts' as ActiveSection, label: 'Contacts', icon: Phone, count: contacts.length, bgColor: 'bg-rose-500', hoverColor: 'hover:bg-rose-600', lightBg: 'bg-rose-50', textColor: 'text-rose-700' },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -590,6 +684,7 @@ function CaregiverDashboard() {
                       onChange={(e) => {
                         const patient = patients.find(p => p.id === e.target.value)
                         setSelectedPatient(patient || null)
+                        setActiveSection(null)
                       }}
                       className="px-3 py-2 border rounded-lg"
                     >
@@ -703,21 +798,13 @@ function CaregiverDashboard() {
                           </div>
                           <p className="text-sm text-muted-foreground">
                             {new Date(appt.appointment_date).toLocaleString('en-US', {
-                              weekday: 'short',
-                              month: 'short',
-                              day: 'numeric',
-                              hour: 'numeric',
-                              minute: '2-digit'
+                              weekday: 'short', month: 'short', day: 'numeric',
+                              hour: 'numeric', minute: '2-digit'
                             })}
                           </p>
                           <p className="text-xs font-medium text-muted-foreground mt-1">
                             In {timeUntil}
                           </p>
-                          {appt.description && (
-                            <p className="text-xs text-muted-foreground mt-1">
-                              {appt.description}
-                            </p>
-                          )}
                         </div>
                       </div>
                     </div>
@@ -730,7 +817,6 @@ function CaregiverDashboard() {
 
         {!selectedPatient ? (
           permissions.isCaregiver ? (
-            // Caregiver Empty State - Distinct from Patient Portal
             <div className="max-w-4xl mx-auto">
               <Card className="border-2 border-dashed border-primary/30 bg-gradient-to-br from-primary/5 to-primary/10">
                 <CardContent className="pt-12 pb-12 text-center">
@@ -752,35 +838,10 @@ function CaregiverDashboard() {
                     <Users className="w-5 h-5" />
                     Add Your First Patient
                   </Button>
-                  
-                  <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6 max-w-3xl mx-auto">
-                    <div className="text-center p-4">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-blue-100 flex items-center justify-center">
-                        <Pill className="w-6 h-6 text-blue-600" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Track Medications</h3>
-                      <p className="text-sm text-muted-foreground">Manage prescriptions and dosages</p>
-                    </div>
-                    <div className="text-center p-4">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-green-100 flex items-center justify-center">
-                        <Calendar className="w-6 h-6 text-green-600" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Schedule Appointments</h3>
-                      <p className="text-sm text-muted-foreground">Never miss a doctor visit</p>
-                    </div>
-                    <div className="text-center p-4">
-                      <div className="w-12 h-12 mx-auto mb-3 rounded-lg bg-purple-100 flex items-center justify-center">
-                        <FileText className="w-6 h-6 text-purple-600" />
-                      </div>
-                      <h3 className="font-semibold mb-1">Store Documents</h3>
-                      <p className="text-sm text-muted-foreground">Keep all records organized</p>
-                    </div>
-                  </div>
                 </CardContent>
               </Card>
             </div>
           ) : (
-            // Patient Empty State - When patient has no care_recipient record
             <Card className="text-center py-12 border-orange-200 bg-orange-50/50">
               <CardContent>
                 <AlertCircle className="w-16 h-16 mx-auto mb-4 text-orange-500" />
@@ -796,68 +857,9 @@ function CaregiverDashboard() {
             </Card>
           )
         ) : (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {/* Data Overview Cards */}
-            <div className="lg:col-span-3 grid grid-cols-1 md:grid-cols-4 gap-4">
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Active Medications</p>
-                      <p className="text-3xl font-bold">{activeMedications.length}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-                      <Pill className="w-6 h-6 text-blue-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Upcoming Appointments</p>
-                      <p className="text-3xl font-bold">{upcomingAppointments.length}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
-                      <Calendar className="w-6 h-6 text-green-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Care Logs</p>
-                      <p className="text-3xl font-bold">{careLogs.length}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-purple-100 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-purple-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm text-muted-foreground">Documents</p>
-                      <p className="text-3xl font-bold">{documents.length}</p>
-                    </div>
-                    <div className="w-12 h-12 rounded-full bg-orange-100 flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-orange-600" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
+          <div className="space-y-6">
             {/* Patient Profile */}
-            <Card className="lg:col-span-3">
+            <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
@@ -903,78 +905,96 @@ function CaregiverDashboard() {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   {selectedPatient.emergency_contact_name && (
                     <div>
                       <p className="text-sm font-medium">Emergency Contact</p>
                       <p className="text-sm text-muted-foreground">
-                        {selectedPatient.emergency_contact_name} • {selectedPatient.emergency_contact_phone}
+                        {selectedPatient.emergency_contact_name} - {selectedPatient.emergency_contact_phone}
                       </p>
                     </div>
                   )}
                   {selectedPatient.allergies && (
                     <div>
                       <p className="text-sm font-medium">Allergies</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedPatient.allergies}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedPatient.allergies}</p>
                     </div>
                   )}
                   {selectedPatient.diagnosis && (
                     <div>
                       <p className="text-sm font-medium">Diagnosis</p>
-                      <p className="text-sm text-muted-foreground">
-                        {selectedPatient.diagnosis}
-                      </p>
+                      <p className="text-sm text-muted-foreground">{selectedPatient.diagnosis}</p>
                     </div>
                   )}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Medications */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col gap-3">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Pill className="w-5 h-5" />
-                      <CardTitle>Medications</CardTitle>
+            {/* Square Icon Tile Navigation */}
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              {sectionTiles.map(tile => {
+                const Icon = tile.icon
+                const isActive = activeSection === tile.id
+                return (
+                  <button
+                    key={tile.id}
+                    onClick={() => setActiveSection(isActive ? null : tile.id)}
+                    className={`flex flex-col items-center justify-center aspect-square rounded-2xl transition-all duration-200 border-2 ${
+                      isActive
+                        ? `${tile.bgColor} text-white border-transparent shadow-lg scale-105`
+                        : `bg-white ${tile.hoverColor.replace('hover:', '')} hover:text-white border-gray-200 hover:border-transparent hover:shadow-lg`
+                    }`}
+                  >
+                    <Icon className="w-10 h-10 mb-2" />
+                    <span className="text-sm font-semibold">{tile.label}</span>
+                    <span className={`text-2xl font-bold mt-1 ${isActive ? 'text-white' : ''}`}>{tile.count}</span>
+                  </button>
+                )
+              })}
+            </div>
+
+            {/* Active Section Content */}
+            {activeSection === 'medications' && (
+              <Card className="border-t-4 border-blue-500">
+                <CardHeader>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Pill className="w-5 h-5 text-blue-500" />
+                        <CardTitle>Medications</CardTitle>
+                      </div>
+                      {permissions.hasPermission('canManageMedications') && (
+                        <Button size="sm" className="bg-blue-500 hover:bg-blue-600" onClick={() => setShowMedicationForm(true)}>
+                          Add Medication
+                        </Button>
+                      )}
                     </div>
-                    {permissions.hasPermission('canManageMedications') && (
-                      <Button size="sm" onClick={() => setShowMedicationForm(true)}>
-                        Add
-                      </Button>
-                    )}
+                    <div className="relative">
+                      <Input
+                        placeholder="Search medications..."
+                        value={medicationSearch}
+                        onChange={(e) => setMedicationSearch(e.target.value)}
+                        className="pr-8"
+                      />
+                      {medicationSearch && (
+                        <button
+                          onClick={() => setMedicationSearch('')}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
                   </div>
-                  <div className="relative">
-                    <Input
-                      placeholder="Search medications..."
-                      value={medicationSearch}
-                      onChange={(e) => setMedicationSearch(e.target.value)}
-                      className="pr-8"
-                    />
-                    {medicationSearch && (
-                      <button
-                        onClick={() => setMedicationSearch('')}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredMedications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    {medicationSearch ? 'No matching medications' : 'No active medications'}
-                  </p>
-                ) : (
-                  <>
-                    {/* Medication Timeline */}
-                    <div className="mb-6 relative">
-                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-gray-200"></div>
+                </CardHeader>
+                <CardContent>
+                  {filteredMedications.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {medicationSearch ? 'No matching medications' : 'No active medications'}
+                    </p>
+                  ) : (
+                    <div className="relative">
+                      <div className="absolute left-4 top-0 bottom-0 w-0.5 bg-blue-200"></div>
                       <div className="space-y-4">
                         {filteredMedications
                           .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -991,19 +1011,12 @@ function CaregiverDashboard() {
                                         Started {new Date(med.date).toLocaleDateString()}
                                       </span>
                                       {index === 0 && (
-                                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded">
-                                          Current
-                                        </span>
+                                        <span className="text-xs px-2 py-0.5 bg-green-100 text-green-800 rounded">Current</span>
                                       )}
                                     </div>
                                   </div>
                                   {permissions.hasPermission('canManageMedications') && (
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8"
-                                      onClick={() => handleDeleteMedication(med.id)}
-                                    >
+                                    <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteMedication(med.id)}>
                                       <Trash2 className="w-4 h-4 text-destructive" />
                                     </Button>
                                   )}
@@ -1013,192 +1026,323 @@ function CaregiverDashboard() {
                           ))}
                       </div>
                     </div>
-                  </>
-                )}
-              </CardContent>
-            </Card>
+                  )}
+                </CardContent>
+              </Card>
+            )}
 
-            {/* Appointments */}
-            <Card>
-              <CardHeader>
-                <div className="flex flex-col gap-3">
+            {activeSection === 'appointments' && (
+              <Card className="border-t-4 border-green-500">
+                <CardHeader>
+                  <div className="flex flex-col gap-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Calendar className="w-5 h-5 text-green-500" />
+                        <CardTitle>Appointments</CardTitle>
+                      </div>
+                      {permissions.hasPermission('canManageAppointments') && (
+                        <Button size="sm" className="bg-green-500 hover:bg-green-600" onClick={() => setShowAppointmentForm(true)}>
+                          Add Appointment
+                        </Button>
+                      )}
+                    </div>
+                    <div className="relative">
+                      <Input
+                        placeholder="Search appointments..."
+                        value={appointmentSearch}
+                        onChange={(e) => setAppointmentSearch(e.target.value)}
+                        className="pr-8"
+                      />
+                      {appointmentSearch && (
+                        <button
+                          onClick={() => setAppointmentSearch('')}
+                          className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {filteredAppointments.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">
+                      {appointmentSearch ? 'No matching appointments' : 'No upcoming appointments'}
+                    </p>
+                  ) : (
+                    <div className="space-y-3">
+                      {filteredAppointments.map(appt => (
+                        <div key={appt.id} className="p-3 border rounded-lg">
+                          <div className="flex items-start justify-between">
+                            <div className="flex-1">
+                              <p className="font-medium">{appt.title}</p>
+                              <p className="text-sm text-muted-foreground">
+                                {new Date(appt.appointment_date).toLocaleString()}
+                              </p>
+                              {appt.location && (
+                                <p className="text-xs text-muted-foreground mt-1">Location: {appt.location}</p>
+                              )}
+                              {appt.description && (
+                                <p className="text-xs text-muted-foreground mt-1">{appt.description}</p>
+                              )}
+                            </div>
+                            {permissions.hasPermission('canManageAppointments') && (
+                              <div className="flex gap-1">
+                                <Button variant="ghost" size="icon" className="h-8 w-8"
+                                  onClick={() => handleToggleAppointment(appt.id, appt.status === 'completed')}>
+                                  <FileCheck className="w-4 h-4" />
+                                </Button>
+                                <Button variant="ghost" size="icon" className="h-8 w-8"
+                                  onClick={() => handleDeleteAppointment(appt.id)}>
+                                  <Trash2 className="w-4 h-4 text-destructive" />
+                                </Button>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'documents' && (
+              <Card className="border-t-4 border-orange-500">
+                <CardHeader>
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5" />
-                      <CardTitle>Appointments</CardTitle>
+                      <FileText className="w-5 h-5 text-orange-500" />
+                      <CardTitle>Documents</CardTitle>
                     </div>
-                    {permissions.hasPermission('canManageAppointments') && (
-                      <Button size="sm" onClick={() => setShowAppointmentForm(true)}>
-                        Add
+                    {permissions.hasPermission('canUploadDocuments') && (
+                      <Button size="sm" className="bg-orange-500 hover:bg-orange-600" onClick={() => setShowDocumentForm(true)}>
+                        Upload Document
                       </Button>
                     )}
                   </div>
-                  <div className="relative">
-                    <Input
-                      placeholder="Search appointments..."
-                      value={appointmentSearch}
-                      onChange={(e) => setAppointmentSearch(e.target.value)}
-                      className="pr-8"
-                    />
-                    {appointmentSearch && (
-                      <button
-                        onClick={() => setAppointmentSearch('')}
-                        className="absolute right-2 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                      >
-                        <X className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                {filteredAppointments.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    {appointmentSearch ? 'No matching appointments' : 'No upcoming appointments'}
-                  </p>
-                ) : (
-                  <div className="space-y-3">
-                    {filteredAppointments.slice(0, 5).map(appt => (
-                      <div key={appt.id} className="p-3 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium">{appt.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              {new Date(appt.appointment_date).toLocaleString()}
-                            </p>
+                </CardHeader>
+                <CardContent>
+                  {documents.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No documents uploaded</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {documents.map(doc => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3 flex-1">
+                            <FileText className="w-5 h-5 text-orange-500" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{doc.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {doc.category} - {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
+                            </div>
                           </div>
-                          {permissions.hasPermission('canManageAppointments') && (
-                            <div className="flex gap-1">
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleToggleAppointment(appt.id, appt.status === 'completed')}
-                              >
-                                <FileCheck className="w-4 h-4" />
-                              </Button>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="h-8 w-8"
-                                onClick={() => handleDeleteAppointment(appt.id)}
-                              >
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8"
+                              onClick={() => window.open(doc.file_url, '_blank')}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                            {permissions.hasPermission('canDeleteDocuments') && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8"
+                                onClick={() => handleDeleteDocument(doc.id, doc.file_url || '')}>
                                 <Trash2 className="w-4 h-4 text-destructive" />
                               </Button>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'careLogs' && (
+              <Card className="border-t-4 border-purple-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Heart className="w-5 h-5 text-purple-500" />
+                      <CardTitle>Care Logs</CardTitle>
+                    </div>
+                    {permissions.hasPermission('canAddCareLogs') && (
+                      <Button size="sm" className="bg-purple-500 hover:bg-purple-600" onClick={() => setShowCareLogForm(true)}>
+                        Add Log
+                      </Button>
+                    )}
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {careLogs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No care logs yet</p>
+                  ) : (
+                    <div className="border rounded-lg overflow-hidden">
+                      <table className="w-full">
+                        <thead className="bg-purple-50">
+                          <tr>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-purple-900">Timestamp</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-purple-900">Activity</th>
+                            <th className="text-left px-4 py-3 text-sm font-medium text-purple-900">Details</th>
+                            {permissions.hasPermission('canDeleteCareLogs') && (
+                              <th className="text-right px-4 py-3 text-sm font-medium text-purple-900 w-16">Action</th>
+                            )}
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {careLogs
+                            .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                            .map(log => (
+                            <tr key={log.id} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 text-sm text-muted-foreground whitespace-nowrap">
+                                <div className="flex items-center gap-1">
+                                  <Clock className="w-3 h-3" />
+                                  {new Date(log.created_at).toLocaleString('en-US', {
+                                    month: 'short', day: 'numeric', year: 'numeric',
+                                    hour: 'numeric', minute: '2-digit'
+                                  })}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 text-sm font-medium">{log.title}</td>
+                              <td className="px-4 py-3 text-sm text-muted-foreground">{log.description || '-'}</td>
+                              {permissions.hasPermission('canDeleteCareLogs') && (
+                                <td className="px-4 py-3 text-right">
+                                  <Button variant="ghost" size="icon" className="h-7 w-7"
+                                    onClick={() => handleDeleteCareLog(log.id)}>
+                                    <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                                  </Button>
+                                </td>
+                              )}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'financial' && (
+              <Card className="border-t-4 border-teal-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <DollarSign className="w-5 h-5 text-teal-500" />
+                      <CardTitle>Financial Information</CardTitle>
+                    </div>
+                    {permissions.hasPermission('canManageFinancials') && (
+                      <Button size="sm" className="bg-teal-500 hover:bg-teal-600" onClick={() => setShowFinancialForm(true)}>
+                        Upload Financial Document
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>
+                    Bank accounts, insurance policies, financial documents, and related information
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {financialDocs.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No financial documents uploaded</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {financialDocs.map(doc => (
+                        <div key={doc.id} className="flex items-center justify-between p-3 border rounded-lg">
+                          <div className="flex items-center gap-3 flex-1">
+                            <DollarSign className="w-5 h-5 text-teal-500" />
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{doc.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                Uploaded {new Date(doc.created_at).toLocaleDateString()}
+                              </p>
                             </div>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Documents */}
-            <Card>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-5 h-5" />
-                    <CardTitle>Documents</CardTitle>
-                  </div>
-                  {permissions.hasPermission('canUploadDocuments') && (
-                    <Button size="sm" onClick={() => setShowDocumentForm(true)}>
-                      Upload
-                    </Button>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {documents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    No documents uploaded
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {documents.slice(0, 5).map(doc => (
-                      <div key={doc.id} className="flex items-center justify-between p-2 border rounded">
-                        <div className="flex items-center gap-2 flex-1">
-                          <FileText className="w-4 h-4" />
-                          <div className="flex-1 min-w-0">
-                            <p className="text-sm font-medium truncate">{doc.name}</p>
-                            <p className="text-xs text-muted-foreground">{doc.category}</p>
+                          </div>
+                          <div className="flex gap-1">
+                            <Button variant="ghost" size="icon" className="h-8 w-8"
+                              onClick={() => window.open(doc.file_url, '_blank')}>
+                              <ExternalLink className="w-4 h-4" />
+                            </Button>
+                            {permissions.hasPermission('canManageFinancials') && (
+                              <Button variant="ghost" size="icon" className="h-8 w-8"
+                                onClick={() => handleDeleteDocument(doc.id, doc.file_url || '')}>
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            )}
                           </div>
                         </div>
-                        <div className="flex gap-1">
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8"
-                            onClick={() => window.open(doc.file_url, '_blank')}
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                          </Button>
-                          {permissions.hasPermission('canDeleteDocuments') && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDeleteDocument(doc.id, doc.file_url || '')}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
-                          )}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-
-            {/* Care Logs */}
-            <Card className="lg:col-span-3">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Care Logs</CardTitle>
-                  {permissions.hasPermission('canAddCareLogs') && (
-                    <Button onClick={() => setShowCareLogForm(true)}>
-                      Add Log
-                    </Button>
+                      ))}
+                    </div>
                   )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {careLogs.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-8">
-                    No care logs yet
-                  </p>
-                ) : (
-                  <div className="space-y-4">
-                    {careLogs.slice(0, 10).map(log => (
-                      <div key={log.id} className="p-4 border rounded-lg">
-                        <div className="flex items-start justify-between">
-                          <div className="flex-1">
-                            <p className="font-medium mb-1">{log.title}</p>
-                            {log.description && <p className="text-sm text-muted-foreground">{log.description}</p>}
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(log.date).toLocaleDateString()}
-                            </span>
+                </CardContent>
+              </Card>
+            )}
+
+            {activeSection === 'contacts' && (
+              <Card className="border-t-4 border-rose-500">
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-5 h-5 text-rose-500" />
+                      <CardTitle>Contacts</CardTitle>
+                    </div>
+                    {permissions.hasPermission('canManageContacts') && (
+                      <Button size="sm" className="bg-rose-500 hover:bg-rose-600" onClick={() => setShowContactForm(true)}>
+                        Add Contact
+                      </Button>
+                    )}
+                  </div>
+                  <CardDescription>
+                    Friends, relatives, and important people in the patient's life
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {contacts.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-4">No contacts added</p>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                      {contacts.map(contact => (
+                        <div key={contact.id} className="p-4 border rounded-lg bg-white">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-rose-100 flex items-center justify-center">
+                                <User className="w-5 h-5 text-rose-600" />
+                              </div>
+                              <div>
+                                <p className="font-medium">{contact.name}</p>
+                                {contact.relationship && (
+                                  <span className="text-xs px-2 py-0.5 bg-rose-100 text-rose-700 rounded">{contact.relationship}</span>
+                                )}
+                              </div>
+                            </div>
+                            {permissions.hasPermission('canManageContacts') && (
+                              <Button variant="ghost" size="icon" className="h-7 w-7"
+                                onClick={() => handleDeleteContact(contact.id)}>
+                                <Trash2 className="w-3.5 h-3.5 text-destructive" />
+                              </Button>
+                            )}
                           </div>
-                          {permissions.hasPermission('canDeleteCareLogs') && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => handleDeleteCareLog(log.id)}
-                            >
-                              <Trash2 className="w-4 h-4 text-destructive" />
-                            </Button>
+                          <div className="mt-3 space-y-1">
+                            {contact.phone && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <Phone className="w-3 h-3" /> {contact.phone}
+                              </p>
+                            )}
+                            {contact.email && (
+                              <p className="text-sm text-muted-foreground flex items-center gap-2">
+                                <UserCircle className="w-3 h-3" /> {contact.email}
+                              </p>
+                            )}
+                          </div>
+                          {contact.is_primary && (
+                            <span className="inline-block mt-2 text-xs px-2 py-0.5 bg-yellow-100 text-yellow-800 rounded">Primary Contact</span>
                           )}
                         </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            )}
           </div>
         )}
       </main>
@@ -1258,12 +1402,8 @@ function CaregiverDashboard() {
                       onChange={(e) => {
                         const value = e.target.value
                         setPatientForm({ ...patientForm, diagnosis: value })
-                        
-                        // Filter suggestions
                         if (value.length > 0) {
-                          const filtered = commonDiagnoses.filter(d => 
-                            d.toLowerCase().includes(value.toLowerCase())
-                          )
+                          const filtered = commonDiagnoses.filter(d => d.toLowerCase().includes(value.toLowerCase()))
                           setDiagnosisSuggestions(filtered)
                           setShowDiagnosisSuggestions(filtered.length > 0)
                         } else {
@@ -1272,33 +1412,21 @@ function CaregiverDashboard() {
                       }}
                       onFocus={() => {
                         if (patientForm.diagnosis.length > 0) {
-                          const filtered = commonDiagnoses.filter(d => 
-                            d.toLowerCase().includes(patientForm.diagnosis.toLowerCase())
-                          )
+                          const filtered = commonDiagnoses.filter(d => d.toLowerCase().includes(patientForm.diagnosis.toLowerCase()))
                           if (filtered.length > 0) {
                             setDiagnosisSuggestions(filtered)
                             setShowDiagnosisSuggestions(true)
                           }
                         }
                       }}
-                      onBlur={() => {
-                        // Delay to allow click on suggestion
-                        setTimeout(() => setShowDiagnosisSuggestions(false), 200)
-                      }}
+                      onBlur={() => { setTimeout(() => setShowDiagnosisSuggestions(false), 200) }}
                       placeholder="Primary diagnosis"
                     />
                     {showDiagnosisSuggestions && (
                       <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                         {diagnosisSuggestions.map((diagnosis, index) => (
-                          <button
-                            key={index}
-                            type="button"
-                            className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
-                            onClick={() => {
-                              setPatientForm({ ...patientForm, diagnosis })
-                              setShowDiagnosisSuggestions(false)
-                            }}
-                          >
+                          <button key={index} type="button" className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                            onClick={() => { setPatientForm({ ...patientForm, diagnosis }); setShowDiagnosisSuggestions(false) }}>
                             {diagnosis}
                           </button>
                         ))}
@@ -1358,9 +1486,7 @@ function CaregiverDashboard() {
                 </div>
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowPatientForm(false)}>
-                  Cancel
-                </Button>
+                <Button variant="outline" onClick={() => setShowPatientForm(false)}>Cancel</Button>
                 <Button onClick={selectedPatient ? handleUpdatePatient : handleAddPatient}>
                   {selectedPatient ? 'Update' : 'Add'} Patient
                 </Button>
@@ -1391,12 +1517,8 @@ function CaregiverDashboard() {
                     onChange={(e) => {
                       const value = e.target.value
                       setMedicationForm({ ...medicationForm, name: value })
-                      
-                      // Filter suggestions
                       if (value.length > 0) {
-                        const filtered = commonMedications.filter(m => 
-                          m.toLowerCase().includes(value.toLowerCase())
-                        )
+                        const filtered = commonMedications.filter(m => m.toLowerCase().includes(value.toLowerCase()))
                         setMedicationSuggestions(filtered)
                         setShowMedicationSuggestions(filtered.length > 0)
                       } else {
@@ -1405,33 +1527,18 @@ function CaregiverDashboard() {
                     }}
                     onFocus={() => {
                       if (medicationForm.name.length > 0) {
-                        const filtered = commonMedications.filter(m => 
-                          m.toLowerCase().includes(medicationForm.name.toLowerCase())
-                        )
-                        if (filtered.length > 0) {
-                          setMedicationSuggestions(filtered)
-                          setShowMedicationSuggestions(true)
-                        }
+                        const filtered = commonMedications.filter(m => m.toLowerCase().includes(medicationForm.name.toLowerCase()))
+                        if (filtered.length > 0) { setMedicationSuggestions(filtered); setShowMedicationSuggestions(true) }
                       }
                     }}
-                    onBlur={() => {
-                      // Delay to allow click on suggestion
-                      setTimeout(() => setShowMedicationSuggestions(false), 200)
-                    }}
+                    onBlur={() => { setTimeout(() => setShowMedicationSuggestions(false), 200) }}
                     placeholder="e.g., Aspirin"
                   />
                   {showMedicationSuggestions && (
                     <div className="absolute z-10 w-full mt-1 bg-white border rounded-lg shadow-lg max-h-48 overflow-y-auto">
                       {medicationSuggestions.map((medication, index) => (
-                        <button
-                          key={index}
-                          type="button"
-                          className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
-                          onClick={() => {
-                            setMedicationForm({ ...medicationForm, name: medication })
-                            setShowMedicationSuggestions(false)
-                          }}
-                        >
+                        <button key={index} type="button" className="w-full px-4 py-2 text-left hover:bg-gray-100 text-sm"
+                          onClick={() => { setMedicationForm({ ...medicationForm, name: medication }); setShowMedicationSuggestions(false) }}>
                           {medication}
                         </button>
                       ))}
@@ -1441,28 +1548,18 @@ function CaregiverDashboard() {
               </div>
               <div>
                 <Label>Details (dosage, frequency, instructions)</Label>
-                <Textarea
-                  value={medicationForm.details}
+                <Textarea value={medicationForm.details}
                   onChange={(e) => setMedicationForm({ ...medicationForm, details: e.target.value })}
-                  placeholder="e.g., 100mg twice daily with food"
-                  rows={3}
-                />
+                  placeholder="e.g., 100mg twice daily with food" rows={3} />
               </div>
               <div>
                 <Label>Start Date</Label>
-                <Input
-                  type="date"
-                  value={medicationForm.date}
-                  onChange={(e) => setMedicationForm({ ...medicationForm, date: e.target.value })}
-                />
+                <Input type="date" value={medicationForm.date}
+                  onChange={(e) => setMedicationForm({ ...medicationForm, date: e.target.value })} />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowMedicationForm(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddMedication}>
-                  Add Medication
-                </Button>
+                <Button variant="outline" onClick={() => setShowMedicationForm(false)}>Cancel</Button>
+                <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleAddMedication}>Add Medication</Button>
               </div>
             </CardContent>
           </Card>
@@ -1483,29 +1580,20 @@ function CaregiverDashboard() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <Label>Log Name *</Label>
-                <Input
-                  value={careLogForm.name}
+                <Label>Activity Name *</Label>
+                <Input value={careLogForm.name}
                   onChange={(e) => setCareLogForm({ ...careLogForm, name: e.target.value })}
-                  placeholder="Brief summary"
-                />
+                  placeholder="e.g., Morning medication given" />
               </div>
               <div>
-                <Label>Description *</Label>
-                <Textarea
-                  value={careLogForm.details}
+                <Label>Details</Label>
+                <Textarea value={careLogForm.details}
                   onChange={(e) => setCareLogForm({ ...careLogForm, details: e.target.value })}
-                  placeholder="Detailed notes"
-                  rows={4}
-                />
+                  placeholder="Additional notes about this activity" rows={3} />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowCareLogForm(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddCareLog}>
-                  Add Log
-                </Button>
+                <Button variant="outline" onClick={() => setShowCareLogForm(false)}>Cancel</Button>
+                <Button className="bg-purple-500 hover:bg-purple-600" onClick={handleAddCareLog}>Add Log</Button>
               </div>
             </CardContent>
           </Card>
@@ -1527,59 +1615,30 @@ function CaregiverDashboard() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Title *</Label>
-                <Input
-                  value={appointmentForm.title}
+                <Input value={appointmentForm.title}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, title: e.target.value })}
-                  placeholder="Doctor's appointment"
-                />
+                  placeholder="Doctor's appointment" />
               </div>
               <div>
                 <Label>Description</Label>
-                <Textarea
-                  value={appointmentForm.description}
+                <Textarea value={appointmentForm.description}
                   onChange={(e) => setAppointmentForm({ ...appointmentForm, description: e.target.value })}
-                  placeholder="Additional details"
-                  rows={2}
-                />
+                  placeholder="Additional details" rows={2} />
               </div>
               <div>
                 <Label>Date & Time *</Label>
-                <Input
-                  type="datetime-local"
-                  value={appointmentForm.appointmentDate}
-                  onChange={(e) => setAppointmentForm({ ...appointmentForm, appointmentDate: e.target.value })}
-                />
+                <Input type="datetime-local" value={appointmentForm.appointmentDate}
+                  onChange={(e) => setAppointmentForm({ ...appointmentForm, appointmentDate: e.target.value })} />
               </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label>Remind Before (minutes)</Label>
-                  <Input
-                    type="number"
-                    value={appointmentForm.remindBeforeMinutes}
-                    onChange={(e) => setAppointmentForm({ ...appointmentForm, remindBeforeMinutes: parseInt(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label>Repeat</Label>
-                  <select
-                    value={appointmentForm.repeatInterval}
-                    onChange={(e) => setAppointmentForm({ ...appointmentForm, repeatInterval: e.target.value as any })}
-                    className="w-full px-3 py-2 border rounded-lg"
-                  >
-                    <option value="none">None</option>
-                    <option value="daily">Daily</option>
-                    <option value="weekly">Weekly</option>
-                    <option value="monthly">Monthly</option>
-                  </select>
-                </div>
+              <div>
+                <Label>Location</Label>
+                <Input value={appointmentForm.location}
+                  onChange={(e) => setAppointmentForm({ ...appointmentForm, location: e.target.value })}
+                  placeholder="Hospital, clinic address" />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowAppointmentForm(false)}>
-                  Cancel
-                </Button>
-                <Button onClick={handleAddAppointment}>
-                  Add Appointment
-                </Button>
+                <Button variant="outline" onClick={() => setShowAppointmentForm(false)}>Cancel</Button>
+                <Button className="bg-green-500 hover:bg-green-600" onClick={handleAddAppointment}>Add Appointment</Button>
               </div>
             </CardContent>
           </Card>
@@ -1601,40 +1660,128 @@ function CaregiverDashboard() {
             <CardContent className="space-y-4">
               <div>
                 <Label>Document Name *</Label>
-                <Input
-                  value={documentForm.name}
+                <Input value={documentForm.name}
                   onChange={(e) => setDocumentForm({ ...documentForm, name: e.target.value })}
-                  placeholder="e.g., Medical Report"
-                />
+                  placeholder="e.g., Medical Report" />
               </div>
               <div>
                 <Label>Category</Label>
-                <select
-                  value={documentForm.category}
+                <select value={documentForm.category}
                   onChange={(e) => setDocumentForm({ ...documentForm, category: e.target.value as DocumentCategory })}
-                  className="w-full px-3 py-2 border rounded-lg"
-                >
+                  className="w-full px-3 py-2 border rounded-lg">
                   <option value="medical">Medical</option>
                   <option value="legal">Legal</option>
-                  <option value="financial">Financial</option>
                   <option value="identification">Identification</option>
                 </select>
               </div>
               <div>
                 <Label>File *</Label>
-                <Input
-                  type="file"
-                  onChange={(e) => setSelectedFile(e.target.files?.[0] || null)}
-                />
+                <Input type="file" onChange={(e) => setSelectedFile(e.target.files?.[0] || null)} />
               </div>
               <div className="flex justify-end gap-2">
-                <Button variant="outline" onClick={() => setShowDocumentForm(false)}>
-                  Cancel
-                </Button>
-                <Button 
+                <Button variant="outline" onClick={() => setShowDocumentForm(false)}>Cancel</Button>
+                <Button className="bg-orange-500 hover:bg-orange-600"
                   onClick={handleUploadDocument}
-                  disabled={uploadingFile || !selectedFile || !documentForm.name}
-                >
+                  disabled={uploadingFile || !selectedFile || !documentForm.name}>
+                  {uploadingFile ? 'Uploading...' : 'Upload'}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Contact Form Modal */}
+      {showContactForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Add Contact</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowContactForm(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Name *</Label>
+                <Input value={contactForm.name}
+                  onChange={(e) => setContactForm({ ...contactForm, name: e.target.value })}
+                  placeholder="Contact's full name" />
+              </div>
+              <div>
+                <Label>Relationship</Label>
+                <select value={contactForm.relationship}
+                  onChange={(e) => setContactForm({ ...contactForm, relationship: e.target.value })}
+                  className="w-full px-3 py-2 border rounded-lg">
+                  <option value="">Select relationship</option>
+                  <option value="Spouse">Spouse</option>
+                  <option value="Child">Child</option>
+                  <option value="Parent">Parent</option>
+                  <option value="Sibling">Sibling</option>
+                  <option value="Friend">Friend</option>
+                  <option value="Neighbor">Neighbor</option>
+                  <option value="Doctor">Doctor</option>
+                  <option value="Caregiver">Caregiver</option>
+                  <option value="Other">Other</option>
+                </select>
+              </div>
+              <div>
+                <Label>Phone Number</Label>
+                <Input value={contactForm.phone}
+                  onChange={(e) => setContactForm({ ...contactForm, phone: e.target.value })}
+                  placeholder="e.g., (555) 123-4567" />
+              </div>
+              <div>
+                <Label>Email</Label>
+                <Input type="email" value={contactForm.email}
+                  onChange={(e) => setContactForm({ ...contactForm, email: e.target.value })}
+                  placeholder="contact@example.com" />
+              </div>
+              <div className="flex items-center gap-2">
+                <input type="checkbox" id="isPrimary" checked={contactForm.is_primary}
+                  onChange={(e) => setContactForm({ ...contactForm, is_primary: e.target.checked })}
+                  className="w-4 h-4" />
+                <Label htmlFor="isPrimary">Primary Contact</Label>
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowContactForm(false)}>Cancel</Button>
+                <Button className="bg-rose-500 hover:bg-rose-600" onClick={handleAddContact}>Add Contact</Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Financial Document Upload Modal */}
+      {showFinancialForm && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <Card className="w-full max-w-lg">
+            <CardHeader>
+              <div className="flex items-center justify-between">
+                <CardTitle>Upload Financial Document</CardTitle>
+                <Button variant="ghost" size="icon" onClick={() => setShowFinancialForm(false)}>
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div>
+                <Label>Document Name *</Label>
+                <Input value={financialForm.name}
+                  onChange={(e) => setFinancialForm({ ...financialForm, name: e.target.value })}
+                  placeholder="e.g., Bank Statement, Insurance Policy" />
+              </div>
+              <div>
+                <Label>File *</Label>
+                <Input type="file" onChange={(e) => setSelectedFinancialFile(e.target.files?.[0] || null)} />
+              </div>
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowFinancialForm(false)}>Cancel</Button>
+                <Button className="bg-teal-500 hover:bg-teal-600"
+                  onClick={handleUploadFinancial}
+                  disabled={uploadingFile || !selectedFinancialFile || !financialForm.name}>
                   {uploadingFile ? 'Uploading...' : 'Upload'}
                 </Button>
               </div>
@@ -1674,7 +1821,6 @@ function CaregiverDashboard() {
                   <p className="text-sm text-muted-foreground">{userProfile?.email}</p>
                 </div>
               </div>
-
               <div className="space-y-3">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Role</p>
@@ -1682,21 +1828,18 @@ function CaregiverDashboard() {
                     {userRole === 'caregiver' ? 'Caregiver' : 'Patient (Read-Only)'}
                   </p>
                 </div>
-
                 {userProfile?.phone && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Phone</p>
                     <p className="text-base">{userProfile.phone}</p>
                   </div>
                 )}
-
                 {userRole === 'caregiver' && patients.length > 0 && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Managing Patients</p>
                     <p className="text-base">{patients.length} patient{patients.length !== 1 ? 's' : ''}</p>
                   </div>
                 )}
-
                 {userRole === 'patient' && selectedPatient && (
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Care Information</p>
@@ -1711,13 +1854,8 @@ function CaregiverDashboard() {
                   </div>
                 )}
               </div>
-
               <div className="pt-4 border-t">
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() => setShowProfileModal(false)}
-                >
+                <Button variant="outline" className="w-full" onClick={() => setShowProfileModal(false)}>
                   Close
                 </Button>
               </div>

@@ -12,6 +12,8 @@ export interface RolePermissions {
   canDeleteDocuments: boolean
   canViewEmergencySummary: boolean
   canExportEmergencySummary: boolean
+  canManageContacts: boolean
+  canManageFinancials: boolean
 }
 
 // Role definitions based on system architecture
@@ -27,7 +29,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canUploadDocuments: false,        // Read-only
     canDeleteDocuments: false,        // Read-only
     canViewEmergencySummary: true,
-    canExportEmergencySummary: true   // Can export their own summary
+    canExportEmergencySummary: true,  // Can export their own summary
+    canManageContacts: false,         // Read-only
+    canManageFinancials: false        // Read-only
   },
   caregiver: {
     canViewPatientInfo: true,
@@ -40,7 +44,9 @@ export const ROLE_PERMISSIONS: Record<UserRole, RolePermissions> = {
     canUploadDocuments: true,         // Full access
     canDeleteDocuments: true,         // Full access
     canViewEmergencySummary: true,
-    canExportEmergencySummary: true
+    canExportEmergencySummary: true,
+    canManageContacts: true,          // Full access
+    canManageFinancials: true         // Full access
   }
 }
 

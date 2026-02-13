@@ -1,36 +1,47 @@
-#  CareVault
+# CareVault
 
-**Secure Medical Information Management for Chronic Care**
+A comprehensive healthcare management application designed for caregivers managing patients with chronic conditions.
 
-CareVault is a full-stack healthcare application designed to help **caregivers and patients** securely manage medical records, medications, appointments, and emergency information - all in one place.
+## Overview
 
->  Built for real-world caregiving scenarios with role-based access control, strong data isolation, and a scalable cloud architecture.
-
----
-
-##  Why CareVault?
-
-Managing healthcare information across multiple patients can be complex and error-prone.  
-**CareVault simplifies caregiving** by centralizing critical medical data while ensuring **privacy, security, and ease of access**.
+CareVault helps caregivers efficiently manage care recipients' medical information, medications, appointments, documents, financial records, and social contacts in one secure platform. Built with role-based access control and strict data isolation.
 
 ---
 
-##  Key Features
+## Key Features
 
--  **Multi-User Roles** – Caregiver and Patient access levels
--  **Care Recipient Management** – One caregiver can manage multiple patients
--  **Medication Records** – Dosage, instructions, and history tracking
--  **Appointment Reminders** – Recurring medical appointments
--  **Secure Document Storage** – Medical, legal, and financial documents
--  **Emergency Summary** – One-click emergency medical overview
--  **Data Isolation** – Row Level Security (RLS) for strict access control
+- **Multi-User Roles** - Caregiver (full CRUD) and Patient (read-only) access levels
+- **Care Recipient Management** - One caregiver manages multiple patients with search and filter
+- **Medication Tracking** - Timeline visualization with autocomplete, dosage, and instructions
+- **Appointment Scheduling** - Calendar view with color-coded urgency alerts (red/yellow/blue)
+- **Document Storage** - Upload and categorize medical, legal, and identification documents
+- **Financial Records** - Dedicated section for bank statements, insurance policies, and financial documents
+- **Contacts Management** - Track friends, relatives, and important people in the patient's life
+- **Care Logs** - Line-by-line activity table with timestamps
+- **Emergency Summary** - One-click PDF generation with critical patient information
+- **Data Isolation** - Row Level Security (RLS) for strict access control
+
+## Dashboard Navigation
+
+The dashboard uses six color-coded square icon tiles as the primary navigation:
+
+| Tile | Color | Function |
+|------|-------|----------|
+| Medications | Blue | View medication timeline, add/search medications |
+| Appointments | Green | View/manage appointments, urgency alerts |
+| Documents | Orange | Upload/download medical and legal documents |
+| Care Logs | Purple | Line-by-line activity log with timestamps |
+| Financial | Teal | Upload/manage financial documents |
+| Contacts | Rose | Manage friends, relatives, and contacts |
+
+Each tile displays a count of items and expands to show the full section when clicked.
 
 ---
 
-##  Technology Stack
+## Technology Stack
 
 | Layer | Technology |
-|------|-----------|
+|-------|------------|
 | Frontend | Next.js 14 (App Router) |
 | Language | TypeScript |
 | UI / Styling | Tailwind CSS + shadcn/ui |
@@ -41,69 +52,67 @@ Managing healthcare information across multiple patients can be complex and erro
 
 ---
 
-##  Project Structure
+## Project Structure
 
 ```
 caregiver_app_project/
-├── app/                      # Next.js app directory
-│   ├── dashboard/           # Dashboard page
-│   ├── patients/            # Patient list page
-│   ├── calendar/            # Calendar view page
-│   ├── login/               # Login page
-│   ├── globals.css          # Global styles
-│   ├── layout.tsx           # Root layout
-│   └── page.tsx             # Home page
-├── components/              # React components
-│   ├── ui/                  # shadcn/ui components
-│   └── EmergencySummary.tsx # Emergency summary component
-├── contexts/                # React Context
-│   └── AuthContext.tsx      # Authentication context
-├── hooks/                   # Custom hooks
-│   └── usePermissions.ts    # Permission management hook
-├── lib/                     # Utility libraries
-│   ├── supabase.ts         # Supabase client
-│   ├── supabase-service.ts # Database service layer
-│   ├── permissions.ts      # Permission configuration
-│   └── utils.ts            # Utility functions
-├── types/                   # TypeScript type definitions
-│   └── supabase.ts         # Database types
-├── database/                # Database scripts
+├── app/
+│   ├── dashboard/            # Main dashboard with 6 section tiles
+│   ├── patients/             # Patient list with search and filter
+│   ├── calendar/             # Monthly calendar view
+│   ├── login/                # Authentication page
+│   ├── globals.css
+│   ├── layout.tsx
+│   └── page.tsx
+├── components/
+│   ├── ui/                   # shadcn/ui components
+│   └── EmergencySummary.tsx  # Emergency PDF generator
+├── contexts/
+│   └── AuthContext.tsx       # Authentication context
+├── hooks/
+│   └── usePermissions.ts     # Role-based permission hook
+├── lib/
+│   ├── supabase.ts           # Supabase client
+│   ├── supabase-service.ts   # Database service layer
+│   ├── permissions.ts        # Permission configuration
+│   └── utils.ts
+├── types/
+│   └── supabase.ts           # TypeScript type definitions
+├── database/
 │   └── CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql
-├── docs/                    # Documentation
+├── docs/
 │   ├── CareVault_Complete_Documentation.md
-│   └── Deployment.md
-└── package.json            # Project dependencies
+│   ├── Deployment.md
+│   └── TEST_REPORT.md
+└── package.json
 ```
 
-##  Quick Start
-
-Get CareVault up and running in minutes.
-
 ---
 
-###  Requirements
+## Quick Start
 
-- **Node.js** 18+
-- **npm** or **yarn**
-- **Supabase** account
+### Requirements
 
----
+- Node.js 18+
+- npm or yarn
+- Supabase account
 
-### 🛠 Installation Steps
+### Installation
 
-#### Clone the repository
+1. Clone the repository
+
 ```bash
-git clone <repository-url>
+git clone https://github.com/xtp111/CareVault.git
 cd caregiver_app_project
 ```
 
-2. **Install dependencies**
+2. Install dependencies
 
 ```bash
 npm install
 ```
 
-3. **Configure environment variables**
+3. Configure environment variables
 
 Create a `.env.local` file:
 
@@ -112,28 +121,13 @@ NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
 ```
 
-4. **Initialize database**
+4. Initialize database
 
 - Login to [Supabase Dashboard](https://supabase.com/dashboard)
 - Go to SQL Editor
 - Execute all contents from `database/CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql`
-- Wait for execution to complete
 
-5. **Create user and set role**
-
-```sql
--- Execute in Supabase SQL Editor
--- After user registration, set role to caregiver
-INSERT INTO users (id, role, full_name)
-VALUES (
-  'your-user-uuid',  -- Get from auth.users table
-  'caregiver',
-  'Your Name'
-)
-ON CONFLICT (id) DO UPDATE SET role = 'caregiver';
-```
-
-6. **Start development server**
+5. Start development server
 
 ```bash
 npm run dev
@@ -141,32 +135,47 @@ npm run dev
 
 Visit `http://localhost:3000`
 
+---
+
 ## Database Architecture
 
 ### Core Tables
 
-- **users**: User basic information, linked to Supabase Auth
-- **care_recipients**: Care recipient information (core entity)
-- **medical_records**: Medical records (medications, conditions, doctors)
-- **appointments**: Appointment reminders
-- **documents**: Document management
-- **emergency_contacts**: Emergency contacts
+| Table | Purpose |
+|-------|---------|
+| users | User accounts linked to Supabase Auth |
+| care_recipients | Patient information (core entity) |
+| medical_records | Medications, conditions, care logs |
+| appointments | Scheduled appointments |
+| documents | Uploaded files (medical, legal, financial, identification) |
+| emergency_contacts | Friends, relatives, and contacts |
 
 ### Data Isolation
 
-- Row Level Security (RLS) implements multi-user data isolation
-- Each caregiver can only access their own care recipients' data
-- Patient role has read-only permissions
+- Row Level Security (RLS) enforces multi-user data isolation at the database level
+- Caregivers can only access their own care recipients' data
+- Patients have read-only access to their linked records
+
+---
 
 ## User Roles and Permissions
 
-| Role | Permissions |
-|------|-------------|
-| **Caregiver** | Full CRUD permissions, can manage care recipients, medical records, appointments, documents |
-| **Patient** | Read-only permissions, can view their own medical information |
-| **Admin** | Reserved role, not yet implemented |
+| Permission | Caregiver | Patient |
+|------------|-----------|---------|
+| View patient info | Yes | Yes |
+| Edit patient info | Yes | No |
+| Manage medications | Yes | No |
+| Manage appointments | Yes | No |
+| Upload/delete documents | Yes | No |
+| Manage financial docs | Yes | No |
+| Manage contacts | Yes | No |
+| Add/delete care logs | Yes | No |
+| View emergency summary | Yes | Yes |
+| Export emergency PDF | Yes | Yes |
 
-## Development Guide
+---
+
+## Development
 
 ### Available Scripts
 
@@ -177,87 +186,46 @@ npm run start    # Start production server
 npm run lint     # Run ESLint checks
 ```
 
-### Adding New Features
+### Service Layer
 
-1. Define TypeScript types in `types/supabase.ts`
-2. Add database service functions in `lib/supabase-service.ts`
-3. Create custom hooks in `hooks/` (if needed)
-4. Implement UI components in `components/`
-5. Update database schema (if new tables are needed)
+All database operations go through the service layer in `lib/supabase-service.ts`:
 
-### Code Standards
+- `userService` - User account operations
+- `careRecipientService` - Patient CRUD operations
+- `medicalRecordService` - Medications and care logs
+- `appointmentService` - Appointment management
+- `documentService` - Document upload/download/delete
+- `emergencyContactService` - Contact management
 
-- Use TypeScript for type checking
-- Follow Next.js 14 App Router best practices
-- Use Tailwind CSS for styling
-- Use shadcn/ui design system for components
+---
 
 ## Deployment
 
-### Vercel Deployment (Recommended)
+### Vercel (Recommended)
 
 1. Push code to GitHub
 2. Import project in [Vercel](https://vercel.com)
-3. Configure environment variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`)
-4. Deployment automatically available after completion
+3. Set environment variables: `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+4. Deploy
 
-### Environment Variable Configuration
-
-Ensure the following environment variables are set in Vercel Dashboard:
-
-```
-NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
-```
-
-## Database Maintenance
-
-### Rebuild Database
-
-To completely rebuild the database:
+### Manual
 
 ```bash
-# Execute in Supabase SQL Editor
-database/CAREVAULT_COMPLETE_SCHEMA_REBUILD.sql
+npm run build
+npm run start
 ```
 
-**Warning**: This operation will delete all existing data!
-
-### Backup Data
-
-It is recommended to regularly create database backups in Supabase Dashboard.
-
-## Common Issues
-
-### 1. Cannot see "Add Patient" button after login?
-
-**Cause**: User role is `patient` (read-only)
-
-**Solution**:
-```sql
--- Execute in Supabase SQL Editor
-UPDATE users SET role = 'caregiver' WHERE id = 'your-user-uuid';
-```
-
-### 2. Error "Failed to add patient" when adding patient?
-
-**Possible causes**:
-- Database schema not correctly initialized
-- RLS policy configuration error
-- User not registered in `users` table
-
-**Solution**: Check browser console error messages, confirm database schema has been correctly executed
-
-### 3. Document upload fails?
-
-**Cause**: Storage bucket not created or permission configuration error
-
-**Solution**: Ensure complete database initialization script has been executed
+---
 
 ## Documentation
 
-- **Complete Documentation**: See `docs/CareVault_Complete_Documentation.md`
-- **Deployment Guide**: See `docs/Deployment.md`
+| Document | Description |
+|----------|-------------|
+| `docs/CareVault_Complete_Documentation.md` | Full application documentation |
+| `docs/Deployment.md` | Deployment guide |
+| `docs/TEST_REPORT.md` | Test report (use case, state transition, combination, unit tests) |
+
+---
 
 ## License
 
@@ -265,8 +233,4 @@ MIT License
 
 ## Contributing
 
-Issues and Pull Requests are welcome!
-
----
-
-**Built with Next.js and Supabase**
+Issues and Pull Requests are welcome.

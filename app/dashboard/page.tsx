@@ -1292,7 +1292,7 @@ function CaregiverDashboard() {
                     )}
                   </div>
                   <CardDescription>
-                    Friends, relatives, and important people in the patient's life
+                    Friends, relatives, and important people in the patient&apos;s life
                   </CardDescription>
                 </CardHeader>
                 <CardContent>

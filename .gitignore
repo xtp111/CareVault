@@ -5,6 +5,9 @@
 
 # testing
 /coverage
+/test-results
+/test-screenshots
+/playwright-report
 
 # next.js
 /.next/
@@ -27,7 +30,16 @@ yarn-error.log*
 
 # vercel
 .vercel
+.vercel-tmp
 
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# IDE
+.idea/
+.vscode/
+
+# cache
+.swc/
+.qoder/

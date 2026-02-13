@@ -17,8 +17,16 @@ const customJestConfig = {
     '/.next/'
   ],
   moduleNameMapper: {
-    '^@/(.*)$': '<rootDir>/src/$1',
+    '^@/(.*)$': '<rootDir>/$1',
   },
+  collectCoverageFrom: [
+    'lib/**/*.{ts,tsx}',
+    'hooks/**/*.{ts,tsx}',
+    'contexts/**/*.{ts,tsx}',
+    '!**/*.d.ts',
+    '!**/node_modules/**',
+  ],
+  coverageReporters: ['json', 'lcov', 'text', 'text-summary'],
 }
 
 module.exports = createJestConfig(customJestConfig)

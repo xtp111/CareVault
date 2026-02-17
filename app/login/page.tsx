@@ -11,8 +11,10 @@ export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [isSignUp, setIsSignUp] = useState(false)
+  const [isForgotPassword, setIsForgotPassword] = useState(false)
   const [selectedRole, setSelectedRole] = useState<UserRole>('caregiver')
   const [error, setError] = useState('')
+  const [success, setSuccess] = useState('')
   const [loading, setLoading] = useState(false)
   
   // Registration form
@@ -20,6 +22,33 @@ export default function LoginPage() {
   const [phone, setPhone] = useState('')
   const [caregiverEmail, setCaregiverEmail] = useState('')
   const [caregiverName, setCaregiverName] = useState('')
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError('')
+    setSuccess('')
+    setLoading(true)
+
+    if (!isSupabaseConfigured || !supabase) {
+      setError('Supabase is not configured. Please add Supabase credentials to .env.local')
+      setLoading(false)
+      return
+    }
+
+    try {
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+
+      if (resetError) throw resetError
+
+      setSuccess('Password reset link has been sent to your email. Please check your inbox.')
+    } catch (err: any) {
+      setError(err.message || 'Failed to send reset email')
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleEmailAuth = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -120,6 +149,61 @@ export default function LoginPage() {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-6">
+            {isForgotPassword ? (
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <p className="text-sm text-gray-600">
+                  Enter your email address and we&apos;ll send you a link to reset your password.
+                </p>
+                <div className="space-y-2">
+                  <label htmlFor="reset-email" className="text-sm font-medium text-gray-700">
+                    Email
+                  </label>
+                  <input
+                    id="reset-email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="Enter your email"
+                    required
+                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent outline-none transition"
+                  />
+                </div>
+
+                {error && (
+                  <div className="text-sm text-red-600 bg-red-50 p-3 rounded-lg">
+                    {error}
+                  </div>
+                )}
+
+                {success && (
+                  <div className="text-sm text-green-600 bg-green-50 p-3 rounded-lg">
+                    {success}
+                  </div>
+                )}
+
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className="w-full h-12 bg-gradient-to-r from-[#FF6B35] to-[#FF8C42] hover:from-[#FF5722] hover:to-[#FF6B35] text-white font-semibold text-lg transition-all duration-300 shadow-lg hover:shadow-xl disabled:opacity-50"
+                >
+                  {loading ? 'Sending...' : 'Send Reset Link'}
+                </Button>
+
+                <div className="text-center">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPassword(false)
+                      setError('')
+                      setSuccess('')
+                    }}
+                    className="text-sm text-[#FF6B35] hover:text-[#FF5722] font-medium transition"
+                  >
+                    Back to Sign In
+                  </button>
+                </div>
+              </form>
+            ) : (
             <form onSubmit={handleEmailAuth} className="space-y-4">
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-gray-700">
@@ -149,6 +233,21 @@ export default function LoginPage() {
                   required
                   className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#FF6B35] focus:border-transparent outline-none transition"
                 />
+                {!isSignUp && (
+                  <div className="text-right">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setIsForgotPassword(true)
+                        setError('')
+                        setSuccess('')
+                      }}
+                      className="text-xs text-[#FF6B35] hover:text-[#FF5722] font-medium transition"
+                    >
+                      Forgot Password?
+                    </button>
+                  </div>
+                )}
               </div>
 
               {isSignUp && (
@@ -294,6 +393,7 @@ export default function LoginPage() {
                 </button>
               </div>
             </form>
+            )}
           </CardContent>
         </Card>
       </div>
